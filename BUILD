@@ -9,10 +9,18 @@ exports_files(['LICENSE'])
 platform(
   name = 'linux',
   constraint_values = [
-    '@platforms//cpu:x86_64',
     '@platforms//os:linux',
+    '@platforms//cpu:x86_64',
     '@bazel_tools//tools/cpp:clang',
   ],
+)
+
+# Compilation
+config_setting(
+  name = 'debug_build',
+  values = {
+    'compilation_mode': 'dbg',
+  },
 )
 
 # IDE integration

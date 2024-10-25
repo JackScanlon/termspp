@@ -10,17 +10,10 @@ cc_binary(
   name = 'termspp',
   srcs = ['main.cpp'],
   deps = [
-    '@pugixml//:pugixml'
+    '//src/mesh:parser',
   ],
   data = select({
-    ":debug_build": ['//resources:xml_debug'],
-    "//conditions:default": [],
+    '//:debug_build': ['//resources:xml_debug'],
+    '//conditions:default': [],
   }),
-)
-
-config_setting(
-  name = "debug_build",
-  values = {
-    "compilation_mode": "dbg",
-  },
 )

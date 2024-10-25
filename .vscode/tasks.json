@@ -8,9 +8,6 @@
       "args": [
         "run", "//:refresh_compile_commands"
       ],
-			"runOptions": {
-				"runOn": "folderOpen"
-			},
       "options": {
         "cwd": "${workspaceFolder}"
       },

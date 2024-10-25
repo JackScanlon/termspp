@@ -10,7 +10,7 @@
   // Languages
   "[cpp]": {
     "editor.tabSize": 2,
-    "editor.rulers": [100],
+    "editor.rulers": [120],
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
     "editor.formatOnSave": true,
@@ -28,7 +28,7 @@
   // Extension config
   "clangd.arguments": [
     "--header-insertion=never",
-    "--compile-commands-dir=${workspaceFolder}/termspp/src",
+    "--compile-commands-dir=${workspaceFolder}",
     "--query-driver=**"
   ],
 

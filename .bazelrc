@@ -8,8 +8,8 @@ build --enable_platform_specific_config
 build:linux --platforms=//:linux
 build:linux --repo_env=CC=clang
 build:linux --extra_toolchains=@llvm_toolchain//:all
-build:linux --cxxopt=-std=c++20
-build:linux --cxxopt=-stdlib=libstdc++
+build:linux --cxxopt=-std=c++2b
+build:linux --cxxopt=-stdlib=libc++
 build:linux --linkopt=-lstdc++
 
 # dbg

@@ -4,6 +4,7 @@ module(name = 'termspp')
 ## Tools
 http_archive = use_repo_rule('@bazel_tools//tools/build_defs/repo:http.bzl', 'http_archive')
 git_repository = use_repo_rule('@bazel_tools//tools/build_defs/repo:git.bzl', 'git_repository')
+new_local_repository = use_repo_rule('@bazel_tools//tools/build_defs/repo:local.bzl', 'new_local_repository')
 
 bazel_dep(name = 'platforms', version = '0.0.10')
 bazel_dep(name = 'bazel_skylib', version = '1.7.1')
@@ -24,6 +25,12 @@ git_override(
   commit = '4f28899228fb3ad0126897876f147ca15026151e',
 )
 
+## Libs
+new_local_repository(
+  name = 'libarrow',
+  path = '/usr',
+  build_file = 'third_party/BUILD.arrow',
+)
 
 # Toolchain config
 llvm = use_extension('@toolchains_llvm//toolchain/extensions:llvm.bzl', 'llvm')

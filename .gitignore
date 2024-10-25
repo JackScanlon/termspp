@@ -7,3 +7,6 @@ compile_commands.json
 **/bazel-*/
 bazel-*
 external
+
+# Datasets
+**/.data/
