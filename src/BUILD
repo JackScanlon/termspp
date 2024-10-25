@@ -12,5 +12,15 @@ cc_binary(
   deps = [
     '@pugixml//:pugixml'
   ],
-  data = ['//resources:xml_debug']
+  data = select({
+    ":debug_build": ['//resources:xml_debug'],
+    "//conditions:default": [],
+  }),
+)
+
+config_setting(
+  name = "debug_build",
+  values = {
+    "compilation_mode": "dbg",
+  },
 )

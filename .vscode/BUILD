@@ -1,2 +1,0 @@
-package(default_visibility = ['//:__pkg__'])
-exports_files(['launch.json-tpl', 'tasks.json-tpl'])
