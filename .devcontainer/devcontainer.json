@@ -1,0 +1,19 @@
+{
+	"name": "termspp",
+	"build": {
+		"dockerfile": "./Dockerfile",
+		"args": {}
+	},
+
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"bazelbuild.vscode-bazel",
+				"llvm-vs-code-extensions.vscode-clangd"
+			]
+		}
+	},
+
+  "remoteUser": "vscode",
+  "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
+}

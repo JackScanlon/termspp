@@ -1,0 +1,16 @@
+# cfg
+common --enable_bzlmod
+
+# base
+build --enable_platform_specific_config
+
+# target
+build:linux --platforms=//:linux
+build:linux --repo_env=CC=clang
+build:linux --extra_toolchains=@llvm_toolchain//:all
+build:linux --cxxopt=-std=c++20
+build:linux --cxxopt=-stdlib=libstdc++
+build:linux --linkopt=-lstdc++
+
+# dbg
+build:debug --enable_runfiles --experimental_inprocess_symlink_creation --strip=never

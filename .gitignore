@@ -1,0 +1,9 @@
+# Compiler & IDE artefacts
+.cache/
+external/
+compile_commands.json
+
+# Bazel artefacts
+**/bazel-*/
+bazel-*
+external

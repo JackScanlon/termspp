@@ -1,0 +1,23 @@
+{
+	"version": "0.2.0",
+  "configurations": [
+    // Launch lldb debugger
+    {
+			"name": "Launch termspp (Linux)",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceRoot}/bazel-bin/src/${workspaceFolderBasename}",
+      "cwd": "${workspaceRoot}",
+      "args": [],
+      "sourceMap": {
+        "/proc/self/cwd": "${workspaceRoot}",
+        "/proc/self/cwd/src": "${workspaceRoot}/src",
+        "/proc/self/cwd/external": "${workspaceRoot}/bazel-bin/external",
+        "/proc/self/cwd/resources": "${workspaceRoot}/bazel-bin/resources",
+        "/proc/self/cwd/bazel-out": "${workspaceRoot}/bazel-out",
+        ".": "${workspaceRoot}"
+      },
+			"preLaunchTask": "Bazel: Build debug"
+    }
+  ]
+}

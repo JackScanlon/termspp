@@ -1,0 +1,35 @@
+module(name = 'termspp')
+
+# Deps
+## Tools
+http_archive = use_repo_rule('@bazel_tools//tools/build_defs/repo:http.bzl', 'http_archive')
+git_repository = use_repo_rule('@bazel_tools//tools/build_defs/repo:git.bzl', 'git_repository')
+
+bazel_dep(name = 'platforms', version = '0.0.10')
+bazel_dep(name = 'bazel_skylib', version = '1.7.1')
+
+## Toolchain
+bazel_dep(name = 'rules_foreign_cc', version = '0.12.0')
+bazel_dep(name = 'toolchains_llvm', version = '1.2.0')
+
+## Packages
+bazel_dep(name = 'pugixml', version = '1.14.bcr.1')
+
+## IDE
+bazel_dep(name = 'hedron_compile_commands', dev_dependency = True)
+
+git_override(
+  module_name = 'hedron_compile_commands',
+  remote = 'https://github.com/hedronvision/bazel-compile-commands-extractor.git',
+  commit = '4f28899228fb3ad0126897876f147ca15026151e',
+)
+
+
+# Toolchain config
+llvm = use_extension('@toolchains_llvm//toolchain/extensions:llvm.bzl', 'llvm')
+llvm.toolchain(
+  llvm_version = '16.0.0',
+)
+
+use_repo(llvm, 'llvm_toolchain')
+register_toolchains('@llvm_toolchain//:all')

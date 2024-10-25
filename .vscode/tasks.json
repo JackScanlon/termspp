@@ -1,0 +1,33 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+    // Resolve compile_commands.json
+		{
+			"label": "Bazel: Refresh compile commands",
+			"command": "bazel",
+      "args": [
+        "run", "//:refresh_compile_commands"
+      ],
+			"runOptions": {
+				"runOn": "folderOpen"
+			},
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": []
+		},
+    // Build with debug symbols
+		{
+      "label": "Bazel: Build debug",
+      "command": "bazel",
+      "args": [
+        "build", "//src:${workspaceFolderBasename}", "-c", "dbg"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": ["Bazel: Refresh compile commands"],
+      "problemMatcher": []
+		}
+  ]
+}
