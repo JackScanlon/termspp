@@ -18,31 +18,27 @@ constexpr int32_t kUidMaxLen = 10;
 
 /// MeSH <DescriptorRecord class="\d+" /> reference value
 typedef uint8_t DescriptorClass;
-constexpr DescriptorClass kTopicalDescriptorClass = 1;
-constexpr DescriptorClass kPublicationTypesClass = 2;
-constexpr DescriptorClass kCheckTagClass = 3;
-constexpr DescriptorClass kGeographicDescriptorClass = 4;
+
+constexpr DescriptorClass kTopicalDescriptorClass    = 1U;
+constexpr DescriptorClass kPublicationTypesClass     = 2U;
+constexpr DescriptorClass kCheckTagClass             = 3U;
+constexpr DescriptorClass kGeographicDescriptorClass = 4U;
 
 /// MeSH <DescriptorRecordSet /> node
-static constexpr const char *kRecordSetNode = "DescriptorRecordSet"; // Root node
+constexpr const char *kRecordSetNode = "DescriptorRecordSet";  // Root node
 
 /// MeSH <DescriptorRecord /> node, attr & child prop reference
-static constexpr const char *kRecordNode = "DescriptorRecord";
-
-static constexpr const char *kCnctListNode = "ConceptList"; // List of <Concept />
-
-static constexpr const char *kDescClassAttr = "DescriptorClass"; // uint8
-
-static constexpr const char *kDescUIProp = "DescriptorUI";     // char[10]
-static constexpr const char *kDescNameProp = "DescriptorName"; // <String char[*] /> (clamped)
+constexpr const char *kRecordNode    = "DescriptorRecord";
+constexpr const char *kCnctListNode  = "ConceptList";      // List of <Concept />
+constexpr const char *kDescClassAttr = "DescriptorClass";  // uint8
+constexpr const char *kDescUIProp    = "DescriptorUI";     // char[10]
+constexpr const char *kDescNameProp  = "DescriptorName";   // <String char[*] /> (clamped)
 
 /// MeSH <Concept /> child prop reference
-static constexpr const char *kConceptNode = "Concept";
+constexpr const char *kConceptNode    = "Concept";
+constexpr const char *kCnctPreferAttr = "PreferredConceptYN";  // char[1] of [ Y | N ]
+constexpr const char *kCnctUIProp     = "ConceptUI";           // char[10]
+constexpr const char *kCnctNameProp   = "ConceptName";         // <String char[*] /> (clamped)
 
-static constexpr const char *kCnctPreferAttr = "PreferredConceptYN"; // char[1] of [ Y | N ]
-
-static constexpr const char *kCnctUIProp = "ConceptUI";     // char[10]
-static constexpr const char *kCnctNameProp = "ConceptName"; // <String char[*] /> (clamped)
-
-} // namespace mesh
-} // namespace termspp
+}  // namespace mesh
+}  // namespace termspp

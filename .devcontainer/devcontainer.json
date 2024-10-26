@@ -15,6 +15,6 @@
 		}
 	},
 
-  "remoteUser": "vscode",
+  "remoteUser": "root",
   "postCreateCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}"
 }

@@ -7,7 +7,6 @@ exports_files(['LICENSE'])
 # a prebuilt binary
 cc_import(
   name = 'arrow',
-  shared_library = 'lib/x86_64-linux-gnu/libarrow.so',
-  static_library = 'lib/x86_64-linux-gnu/libarrow.a',
-  visibility = ['//visibility:public'],
+  interface_library = 'lib/x86_64-linux-gnu/libarrow.so',
+  system_provided = True,
 )

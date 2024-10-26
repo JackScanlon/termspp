@@ -1,20 +1,24 @@
 # termspp
 
+<!-- badges: start -->
+[![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+<!-- badges: end -->
+
 ## 1. Overview
 
 > [!NOTE]
 > TODO
 
 
-## 1. Development
+## 2. Development
 
-### 1.1. Tooling
+### 2.1. Tooling
 
 > [!NOTE]
 > TODO
 
 
-### 1.2. Debugging
+### 2.2. Debugging
 
 > [!TIP]
 > - See hedronvision's compile commands extractor [here](https://github.com/hedronvision/bazel-compile-commands-extractor) for more information.

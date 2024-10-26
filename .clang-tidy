@@ -9,7 +9,6 @@ Checks: >
   -modernize-use-using,
   -modernize-avoid-c-arrays,
   -modernize-return-braced-init-list,
-  -modernize-use-trailing-return-type,
   -modernize-concat-nested-namespaces,
   readability-*,
   -readability-magic-numbers,

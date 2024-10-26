@@ -6,11 +6,12 @@
 			"label": "Bazel: Refresh compile commands",
 			"command": "bazel",
       "args": [
-        "run", "//:refresh_compile_commands"
+        "run", "//:refresh_compile_commands", "-c", "dbg"
       ],
       "options": {
         "cwd": "${workspaceFolder}"
       },
+      "dependsOn": ["Bazel: Build debug"],
       "problemMatcher": []
 		},
     // Build with debug symbols
@@ -23,7 +24,6 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": ["Bazel: Refresh compile commands"],
       "problemMatcher": []
 		}
   ]

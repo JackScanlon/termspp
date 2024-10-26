@@ -11,13 +11,13 @@
       "args": [],
       "sourceMap": {
         "/proc/self/cwd": "${workspaceRoot}",
-        "/proc/self/cwd/src": "${workspaceRoot}/bazel-bin/src",
-        "/proc/self/cwd/external": "${workspaceRoot}/bazel-bin/external",
-        "/proc/self/cwd/resources": "${workspaceRoot}/bazel-bin/resources",
-        "/proc/self/cwd/bazel-out": "${workspaceRoot}/bazel-out",
-        ".": "${workspaceRoot}"
+        "/proc/self/cwd/src": "${workspaceRoot}/bazel-out/k8-dbg/bin/src",
+        "/proc/self/cwd/external": "${workspaceRoot}/bazel-out/k8-dbg/bin/external",
+        "/proc/self/cwd/resources": "${workspaceRoot}/bazel-out/k8-dbg/bin/resources",
+        "/proc/self/cwd/bazel-out": "${workspaceRoot}/bazel-out/",
+        ".": "${workspaceRoot}/bazel-out/k8-dbg/bin/src"
       },
-			"preLaunchTask": "Bazel: Build debug"
+			"preLaunchTask": "Bazel: Refresh compile commands"
     }
   ]
 }

@@ -1,13 +1,17 @@
 #pragma once
 
+#include "arrow/memory_pool.h"
 #include "constants.hpp"
+#include "termspp/common/utils.hpp"
 
 #include <cstdint>
-#include <string>
-#include <utility>
+#include <memory>
+#include <unordered_map>
 
 namespace termspp {
 namespace mesh {
+
+namespace common = termspp::common;
 
 /// Note to self:
 ///   - Unsure if we want to make an unordered map to test against known
@@ -15,24 +19,37 @@ namespace mesh {
 ///     Apache arrow to process against the mappings?
 ///
 struct DescriptorRecord {
-  std::string name;
-  std::string uid;
-  uint8_t dcid;
-
-  explicit DescriptorRecord(std::string &&uid_, std::string &&name_, uint8_t dcid_)
-      : name(std::move(name_)), uid(std::move(uid_)), dcid(dcid_) {}
-
-  DescriptorRecord(DescriptorRecord &&other) noexcept
-      : name(std::move(other.name)), uid(std::move(other.uid)), dcid(std::exchange(other.dcid, 0)){};
-
-  DescriptorRecord(DescriptorRecord &other) = default;
-  DescriptorRecord(const DescriptorRecord &other) = default;
-  DescriptorRecord &operator=(const DescriptorRecord &other) = default;
+  char    *namePtr;
+  char    *uidPtr;
+  uint16_t nameLen;
+  uint16_t uidLen;
+  uint8_t  dcid;
 };
 
 /// Parse MeSH terminology dataset from file
-///  - docs: todo
-bool ParseMeshDocument(const char *filepath);
+/// TODO(J): docs
+class MeshDocument final : public std::enable_shared_from_this<MeshDocument> {
+  typedef std::unordered_map<const char *, DescriptorRecord, common::CharHash, common::CharComp> RecordMap;
 
-} // namespace mesh
-} // namespace termspp
+public:
+  static auto Load(const char *filepath) -> std::shared_ptr<MeshDocument>;
+
+public:
+  // clang-format off
+  MeshDocument(MeshDocument const &)                  = delete;
+  auto operator=(MeshDocument const &)->MeshDocument& = delete;
+  virtual ~MeshDocument();
+
+private:
+  auto loadFile(const char *filepath) -> bool;
+
+private:
+  RecordMap                          records_;
+  std::unique_ptr<arrow::MemoryPool> pool_;
+
+protected:
+  explicit MeshDocument(const char *filepath);
+};
+
+}  // namespace mesh
+}  // namespace termspp

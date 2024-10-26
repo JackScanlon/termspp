@@ -2,11 +2,36 @@ BasedOnStyle: LLVM
 Language: Cpp
 
 UseTab: Never
-IndentWidth: 2
 ColumnLimit: 120
+IndentWidth: 2
+AccessModifierOffset: -2
+ContinuationIndentWidth: 2
+SpacesBeforeTrailingComments: 2
 
-AlwaysBreakTemplateDeclarations: true
-AllowShortFunctionsOnASingleLine: InlineOnly
+ReferenceAlignment: Right
+PointerAlignment: Right
+SpaceAroundPointerQualifiers: After
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: Empty
+BinPackArguments: false
+BinPackParameters: false
+AlignArrayOfStructures: Right
+AlignConsecutiveDeclarations: true
+AlignAfterOpenBracket: Align
+AllowShortBlocksOnASingleLine: Empty
+StatementAttributeLikeMacros: [auto]
+AlignConsecutiveAssignments:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+  AlignCompound: true
+  PadOperators: true
+AlignConsecutiveMacros:
+  Enabled: true
+  AcrossEmptyLines: false
+  AcrossComments: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: true
 
 SortIncludes: true
 IncludeBlocks: Regroup

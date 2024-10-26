@@ -7,6 +7,16 @@
   "files.insertFinalNewline": true,
   "files.trimFinalNewlines": true,
 
+  // Inlay hints
+  "workbench.colorCustomizations": {
+    "editorInlayHint.background": "#4d4d4d46",
+    "editorInlayHint.foreground": "#ffffffe5",
+    "editorInlayHint.parameterBackground": "#4d4d4d46",
+    "editorInlayHint.parameterForeground": "#ffffffe5",
+    "editorInlayHint.typeBackground": "#4d4d4d46",
+    "editorInlayHint.typeForeground": "#ffffffe5",
+  },
+
   // Languages
   "[cpp]": {
     "editor.tabSize": 2,
@@ -14,7 +24,7 @@
     "editor.insertSpaces": true,
     "editor.detectIndentation": false,
     "editor.formatOnSave": true,
-    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd",
   },
   "[jsonc]": {
     "editor.defaultFormatter": "vscode.json-language-features"

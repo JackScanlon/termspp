@@ -1,13 +1,17 @@
 #include "termspp/mesh/parser.hpp"
 
+#include <cstdio>
 #include <cstdlib>
-#include <filesystem>
-#include <iostream>
+#include <string>
 
-int main() {
-  const auto path = std::filesystem::path{"/workspaces/termspp/.data/desc2024.xml"};
-  const auto success = termspp::mesh::ParseMeshDocument(path.c_str());
-  std::cout << std::boolalpha << "Parse op: " << success << '\n';
+#define STRINGIFY(x)       #x
+#define MACRO_STRINGIFY(x) STRINGIFY(x)
+
+auto main() -> int {
+  auto target = std::string(MACRO_STRINGIFY(RESOURCE_PATH));
+  std::printf("Target: %s\n", target.c_str());
+
+  auto doc = termspp::mesh::MeshDocument::Load(target.c_str());
 
   return EXIT_SUCCESS;
 }
