@@ -35,11 +35,6 @@ RUN \
 ENV PATH="/usr/lib/llvm-${LLVM_VERSION}/bin:/usr/lib/llvm-${LLVM_VERSION}/include:${PATH}"
 ENV LD_LIBRARY_PATH="/usr/lib/llvm-${LLVM_VERSION}/lib:/usr/lib/x86_64-linux-gnu/"
 
-# RUN \
-#   ln -s /usr/bin/clang-${LLVM_VERSION} /usr/bin/clang && \
-#   ln -s /usr/bin/clang++-${LLVM_VERSION} /usr/bin/clang++ && \
-#   ln -s /usr/bin/clang-format-${LLVM_VERSION} /usr/bin/clang-format
-
 RUN \
   update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 && \
   update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100

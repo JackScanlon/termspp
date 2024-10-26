@@ -26,8 +26,8 @@
 Debugging using the CLI:
 1. Run `bazel run :refresh_compile_commands`
 2. When debugging builds:
-  - Build  `bazel build //src:termspp -c dbg --verbose_failures`
-  - Run  `bazel run //src:termspp -c dbg`
+    - Build  `bazel build //src:termspp -c dbg --verbose_failures`
+    - Run  `bazel run //src:termspp -c dbg`
 
 Debugging using `launch.json`:
 1. Add breakpoints where required
