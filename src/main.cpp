@@ -8,7 +8,7 @@
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
 auto main() -> int {
-  auto target = std::string(MACRO_STRINGIFY(RESOURCE_PATH));
+  auto target = std::string{MACRO_STRINGIFY(RESOURCE_PATH)};
   std::printf("Target: %s\n", target.c_str());
 
   auto doc = termspp::mesh::MeshDocument::Load(target.c_str());

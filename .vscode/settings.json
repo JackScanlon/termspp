@@ -42,9 +42,14 @@
     "--query-driver=**"
   ],
 
-  // Cpp
+  // File assoc. for syntax highlighting/linting etc
   "files.associations": {
+    "BUILD.*": "starlark",
+    "*.clang-format": "yaml",
+    "*.clang-tidy": "yaml",
+    "*.clangd": "yaml",
     "*.jsonc": "json",
+    "*.bazel.lock": "json",
     ".env*": "dotenv",
     "string_view": "cpp",
     "ostream": "cpp",
@@ -118,5 +123,5 @@
     "random": "cpp",
     "type_traits": "cpp",
     "utility": "cpp"
-  },
+  }
 }

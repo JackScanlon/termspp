@@ -1,44 +1,52 @@
-#include <cstdint>
+#pragma once
 
 /// MeSH XML data elements
 ///
 /// > See the following references:
-/// >   - XML data elements, found [here](https://www.nlm.nih.gov/mesh/xml_data_elements.html#DescriptorRecordSet)
+/// >   - XML data elements, found [here](https://www.nlm.nih.gov/mesh/xml_data_elements.html)
 /// >   - MeSH record types, found [here](https://www.nlm.nih.gov/mesh/intro_record_types.html)
 ///
 /// Note:
-///   - We want the absolute bare minimum here as we're not interested in using the qualifiers, terms and other
-///     mappable data as our ontological terms
+///   - We want the absolute bare minimum here as we're not particularly interested in the relationships
+///     between MeSH Concepts
 ///
 namespace termspp {
 namespace mesh {
 
-/// MeSH unique identifier max length
-constexpr int32_t kUidMaxLen = 10;
+/// MeSH XML record fields
+///
+/// Describes common fields specified as a descendant of MeSH nodes:
+///   - The `kStringField` might describe a node that's a grandchild/descendant of the node of interest or
+///     it might be specified as a direct child, e.g. in the case of a `<Term />` node
+///   - However, we can safely ignore it in the former case by traversing the branch to select the `first_child()`
+///
+constexpr const char *kStringField = "String";  // char[*]: Inner text of which specifies the unique term
 
-/// MeSH <DescriptorRecord class="\d+" /> reference value
-typedef uint8_t DescriptorClass;
+/// MeSH XML node names
+///
+/// Describes the MeSH nodes of interest to us, i.e. `<${name:-DescriptorRecord} />`
+///   - Note that we're intentionally ignoring the relationships defined by `<ConceptRelation />` here as
+///     we're not interested in
+///
+constexpr const char *kRecordSetNode = "DescriptorRecordSet";      // [ Root]: Document root
+constexpr const char *kRecordNode    = "DescriptorRecord";         // [Child]: <DescriptorRecordSet/>'s child
+constexpr const char *kConcListNode  = "ConceptList";              // [Child]: <DescriptorRecord/>'s child
+constexpr const char *kConcNode      = "Concept";                  // [Child]: <ConceptList/>'s child
+constexpr const char *kTermListNode  = "TermList";                 // [Child]: <DescriptorRecord/>'s child
+constexpr const char *kTermNode      = "Term";                     // [Child]: <TermList/>'s child
+constexpr const char *kQualListNode  = "AllowableQualifiersList";  // [Child]: <DescriptRecord/>'s child
+constexpr const char *kQualNode      = "AllowableQualifier";       // [Child]: <AllowableQualifiersList/>'s child
 
-constexpr DescriptorClass kTopicalDescriptorClass    = 1U;
-constexpr DescriptorClass kPublicationTypesClass     = 2U;
-constexpr DescriptorClass kCheckTagClass             = 3U;
-constexpr DescriptorClass kGeographicDescriptorClass = 4U;
-
-/// MeSH <DescriptorRecordSet /> node
-constexpr const char *kRecordSetNode = "DescriptorRecordSet";  // Root node
-
-/// MeSH <DescriptorRecord /> node, attr & child prop reference
-constexpr const char *kRecordNode    = "DescriptorRecord";
-constexpr const char *kCnctListNode  = "ConceptList";      // List of <Concept />
-constexpr const char *kDescClassAttr = "DescriptorClass";  // uint8
-constexpr const char *kDescUIProp    = "DescriptorUI";     // char[10]
-constexpr const char *kDescNameProp  = "DescriptorName";   // <String char[*] /> (clamped)
-
-/// MeSH <Concept /> child prop reference
-constexpr const char *kConceptNode    = "Concept";
-constexpr const char *kCnctPreferAttr = "PreferredConceptYN";  // char[1] of [ Y | N ]
-constexpr const char *kCnctUIProp     = "ConceptUI";           // char[10]
-constexpr const char *kCnctNameProp   = "ConceptName";         // <String char[*] /> (clamped)
+/// MeSH XML attributes
+///
+/// Describes the MeSH attributes of interest to us, i.e. `<SomeNode ${attr:-LexicalTag}="(\w+)" />`
+///   - Note that we're mapping these to the `mesh::MeshModifier` enum
+///
+constexpr const char *kDescClassAttr = "DescriptorClass";         // uint8_t: Specifies whether indexable
+constexpr const char *kConcPrefAttr  = "PreferredConceptYN";      // char[1]: Specifies descriptor preference (Y/N)
+constexpr const char *kTermConcAttr  = "ConceptPreferredTermYN";  // char[1]: Specifies concept preference (Y/N)
+constexpr const char *kTermDescAttr  = "RecordPreferredTermYN";   // char[1]: Specifies descriptor preference (Y/N)
+constexpr const char *kTermLexAttr   = "LexicalTag";              // char[3]: Specifies the lexical category (!see refs)
 
 }  // namespace mesh
 }  // namespace termspp

@@ -24,10 +24,12 @@ public:
   ScopedDeleterImpl(ScopedDeleterImpl &&other)                       = delete;
   ScopedDeleterImpl(const ScopedDeleterImpl &other)                  = delete;
   auto operator=(const ScopedDeleterImpl &other)->ScopedDeleterImpl& = delete;
+  // clang-format on
 
   auto release() -> T * {
     // clang-format off
     T *res = resource;
+    // clang-format on
     resource = nullptr;
     return res;
   }
@@ -41,7 +43,9 @@ public:
 ///
 /// Example:
 /// ```cpp
-///   auto cleanup = termspp::common::ScopedDeleter(::fopen("some/path/to/file.txt"), [](FILE* res) {
+///   auto cleanup =
+///   termspp::common::ScopedDeleter(::fopen("some/path/to/file.txt"), [](FILE*
+///   res) {
 ///     // e.g. close file handle ...
 ///     ::fclose(res);
 ///   });
@@ -72,6 +76,7 @@ public:
   // clang-format off
   OnScopeExitImpl(const OnScopeExitImpl &other)                  = delete;
   auto operator=(const OnScopeExitImpl &other)->OnScopeExitImpl& = delete;
+  // clang-format on
 
 public:
   Fn   fn{};

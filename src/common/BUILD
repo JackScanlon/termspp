@@ -16,3 +16,9 @@ cc_library(
   hdrs = ['scope.hpp'],
   include_prefix = 'termspp/common',
 )
+
+cc_library(
+  name = 'strings',
+  hdrs = ['strings.hpp'],
+  include_prefix = 'termspp/common',
+)

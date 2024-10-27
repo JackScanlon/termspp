@@ -11,6 +11,7 @@ cc_library(
   hdrs = ['parser.hpp', 'constants.hpp'],
   deps = [
     '//src/common:utils',
+    '//src/common:strings',
     '@libarrow//:arrow',
     '@pugixml//:pugixml',
   ],

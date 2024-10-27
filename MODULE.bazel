@@ -33,7 +33,7 @@ git_override(
 new_local_repository(
   name = 'libarrow',
   path = '/usr',
-  build_file = 'third_party/BUILD.arrow',
+  build_file = 'third_party/arrow.BUILD',
 )
 
 # Toolchain config

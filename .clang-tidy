@@ -3,6 +3,7 @@ Checks: >
   -*,
   portability-*,
   misc-*,
+  -misc-no-recursion,
   -misc-misplaced-const,
   -misc-non-private-member-variables-in-classes,
   modernize-*,

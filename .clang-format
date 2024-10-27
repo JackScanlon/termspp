@@ -13,6 +13,7 @@ PointerAlignment: Right
 SpaceAroundPointerQualifiers: After
 AlwaysBreakTemplateDeclarations: Yes
 AllowShortFunctionsOnASingleLine: Empty
+AllowShortLambdasOnASingleLine: Empty
 BinPackArguments: false
 BinPackParameters: false
 AlignArrayOfStructures: Right
@@ -36,13 +37,13 @@ SpaceBeforeParens: true
 SortIncludes: true
 IncludeBlocks: Regroup
 IncludeCategories:
-  - Regex: '^"(llvm|llvm-c|llvm-dialects|clang|clang-c)/'
+  - Regex: '^<([a-zA-Z0-9])([_-]?[a-zA-Z0-9])*>$'
     Priority: 5
-  - Regex: '^(<|"(gtest|gmock|isl|json)/)'
+  - Regex: '^"(llvm|llvm-c|llvm-dialects|clang|clang-c)/'
     Priority: 4
-  - Regex: '<[[:alnum:].]+>'
+  - Regex: '^((<|")(gtest|gmock|isl|json|arrow|pugixml)/?)'
     Priority: 3
-  - Regex: '(?<!arrow).*/'
+  - Regex: '.*/'
     Priority: 2
   - Regex: '.*'
     Priority: 1
