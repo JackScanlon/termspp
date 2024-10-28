@@ -1,6 +1,6 @@
 #pragma once
 
-#include "records.hpp"
+#include "termspp/mesh/records.hpp"
 
 #include <string_view>
 #include <unordered_map>
@@ -18,6 +18,20 @@ struct MeshFields {
   bool        isEncapsulated;
 };
 
+/// Describes a MeSH record's base properties
+///   - Used for structured binding of results (i.e. destructuring assignment)
+struct MeshProps {
+  const char *uid;
+  const char *name;
+};
+
+/// Describes a MeSH `<Term/>`'s attribute(s)
+///   - Used for structured binding of results (i.e. destructuring assignment)
+struct MeshTermAttr {
+  MeshCategory cat;
+  MeshModifier mod;
+};
+
 /// Describes fields associated with a specific MeSH XML node type
 static const auto kNodeFields = []() {
   return std::vector<MeshFields>{
@@ -28,20 +42,6 @@ static const auto kNodeFields = []() {
   };
 };
 
-/// Describes a MeSH record's base properties
-///   - Used for structured binding (i.e. destructuring assignment)
-struct MeshProps {
-  const char *uid;
-  const char *name;
-};
-
-/// Describes a MeSH `<Term/>`'s attribute(s)
-///   - Used for structured binding (i.e. destructuring assignment)
-struct MeshTermAttr {
-  MeshCategory cat;
-  MeshModifier mod;
-};
-
 /// Maps MeSH XML node names to known MeSH types
 static const auto kNodeTypes = []() {
   return std::unordered_map<std::string_view, MeshType>{
@@ -49,6 +49,22 @@ static const auto kNodeTypes = []() {
     {"AllowableQualifier",        MeshType::kQualifier},
     {           "Concept",          MeshType::kConcept},
     {              "Term",             MeshType::kTerm},
+  };
+};
+
+/// MeSH XML attribute modifier map
+///   - used to map the XML Node's attribute value to its corresponding `mesh::MeshModifier`
+inline static const auto kMeshModifiers = []() {
+  return std::unordered_map<std::string_view, mesh::MeshModifier>{
+    {"NON", mesh::MeshModifier::kTermLexNon},
+    {"ABB", mesh::MeshModifier::kTermLexAbb},
+    {"ABX", mesh::MeshModifier::kTermLexAbx},
+    {"ACR", mesh::MeshModifier::kTermLexAcr},
+    {"ACX", mesh::MeshModifier::kTermLexAcx},
+    {"EPO", mesh::MeshModifier::kTermLexEpo},
+    {"LAB", mesh::MeshModifier::kTermLexLab},
+    {"TRD", mesh::MeshModifier::kTermLexTrd},
+    {"NAM", mesh::MeshModifier::kTermLexNam},
   };
 };
 

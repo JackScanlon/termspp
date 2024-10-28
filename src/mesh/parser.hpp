@@ -1,8 +1,7 @@
 #pragma once
 
-#include "records.hpp"
-
 #include "termspp/common/utils.hpp"
+#include "termspp/mesh/records.hpp"
 
 #include "arrow/memory_pool.h"
 
@@ -32,13 +31,13 @@ public:
 private:
   auto loadFile(const char *filepath) -> MeshResult;
 
-  auto parseRecords(const void *nodePtr, const char *parent = nullptr) -> MeshResult;
+  auto parseRecords(const void *nodePtr, const char *parentUid = nullptr) -> MeshResult;
 
-  auto iterateChildren(const void *nodePtr, const MeshType &type, const char *uid) -> MeshResult;
+  auto iterateChildren(const void *nodePtr, const MeshType &type, const char *parentUid) -> MeshResult;
 
   auto allocRecord(const char  *uid,
                    const char  *name,
-                   const char  *parent,
+                   const char  *parentUid,
                    MeshType     type,
                    MeshCategory cat = MeshCategory::kUnknown,
                    MeshModifier mod = MeshModifier::kUnknown) -> MeshResult;
