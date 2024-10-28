@@ -2,6 +2,7 @@
 
 #include "termspp/common/strings.hpp"
 #include "termspp/mesh/constants.hpp"
+#include "termspp/mesh/fields.hpp"
 
 #include "arrow/api.h"
 #include "pugixml.hpp"
@@ -15,55 +16,12 @@
 namespace mesh   = termspp::mesh;
 namespace common = termspp::common;
 
-/// Describes how to parse MeSH XML node field(s)
-struct MeshFields {
-  const char    *uidField;
-  const char    *nameField;
-  mesh::MeshType nodeType;
-  bool           isNamedField;
-  bool           isEncapsulated;
-};
-
-/// Describes fields associated with a specific MeSH XML node type
-static const auto kNodeFields = []() {
-  return std::vector<MeshFields>{
-    {"DescriptorUI", "DescriptorName", mesh::MeshType::kDescriptorRecord,  true, false},
-    { "QualifierUI",  "QualifierName",        mesh::MeshType::kQualifier,  true,  true},
-    {   "ConceptUI",    "ConceptName",          mesh::MeshType::kConcept,  true, false},
-    {     "TermsUI",          nullptr,             mesh::MeshType::kTerm, false, false}
-  };
-};
-
-/// Describes a MeSH record's base properties
-///   - Used for structured binding (i.e. destructuring assignment)
-struct MeshProps {
-  const char *uid;
-  const char *name;
-};
-
-/// Describes a MeSH `<Term/>`'s attribute(s)
-///   - Used for structured binding (i.e. destructuring assignment)
-struct MeshTermAttr {
-  mesh::MeshCategory cat;
-  mesh::MeshModifier mod;
-};
-
-/// Maps MeSH XML node names to known MeSH types
-static const auto kNodeTypes = []() {
-  return std::unordered_map<std::string_view, mesh::MeshType>{
-    {  "DescriptorRecord", mesh::MeshType::kDescriptorRecord},
-    {"AllowableQualifier",        mesh::MeshType::kQualifier},
-    {           "Concept",          mesh::MeshType::kConcept},
-    {              "Term",             mesh::MeshType::kTerm},
-  };
-};
-
 /// TODO(J): docs
 auto tryGetRecordType(const pugi::xml_node *node) -> std::expected<mesh::MeshType, mesh::MeshResult> {
-  const auto types = kNodeTypes();
+  const auto types = mesh::kNodeTypes();
   const auto type  = types.find(node->name());
   if (type == types.end()) {
-    return std::unexpected(mesh::MeshResult::kUnknownNodeTypeErr);
+    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kUnknownNodeTypeErr});
   }
 
   return type->second;
@@ -71,14 +29,14 @@ auto tryGetRecordType(const pugi::xml_node *node) -> std::expected<mesh::MeshTyp
 
 /// TODO(J): docs
 auto tryGetRecordFields(const mesh::MeshType &type,
-                        const pugi::xml_node *node) -> std::expected<MeshProps, mesh::MeshResult> {
-  const auto fields = kNodeFields();
-  const auto schema = std::find_if(fields.begin(), fields.end(), [&](const MeshFields &elem) {
+                        const pugi::xml_node *node) -> std::expected<mesh::MeshProps, mesh::MeshResult> {
+  const auto fields = mesh::kNodeFields();
+  const auto schema = std::find_if(fields.begin(), fields.end(), [&](const mesh::MeshFields &elem) {
     return elem.nodeType == type;
   });
 
   if (schema == fields.end()) {
-    return std::unexpected(mesh::MeshResult::kUnknownNodeTypeErr);
+    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kUnknownNodeTypeErr});
   }
 
   const auto *uid  = node->child(schema->uidField).child_value();
@@ -94,10 +52,10 @@ auto tryGetRecordFields(const mesh::MeshType &type,
   }
 
   if (uid == nullptr || name == nullptr) {
-    return std::unexpected(mesh::MeshResult::kInvalidDataTypeErr);
+    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kInvalidDataTypeErr});
   }
 
-  return MeshProps{
+  return mesh::MeshProps{
     .uid  = uid,
     .name = name,
   };
@@ -105,7 +63,7 @@ auto tryGetRecordFields(const mesh::MeshType &type,
 
 /// TODO(J): docs
 auto tryGetDescriptorClass(const char *attr) -> std::expected<mesh::MeshCategory, mesh::MeshResult> {
-  auto status = mesh::MeshResult::kUnknownDataTypeErr;
+  auto status = mesh::MeshResult{mesh::MeshStatus::kUnknownDataTypeErr};
   if (attr == nullptr || attr[0] == '\0') {
     return std::unexpected(status);
   }
@@ -115,13 +73,13 @@ auto tryGetDescriptorClass(const char *attr) -> std::expected<mesh::MeshCategory
     auto value = static_cast<mesh::MeshCategory>(std::strtoul(attr, nullptr, 0));
     if (value > mesh::MeshCategory::kUnknown && value <= mesh::MeshCategory::kDescriptorGeographic) {
       result = value;
-      status = mesh::MeshResult::kSuccessful;
+      status.SetStatus(mesh::MeshStatus::kSuccessful);
     }
   } catch (const std::exception &e) {
-    status = mesh::MeshResult::kInvalidDataTypeErr;
+    status.SetStatus(mesh::MeshStatus::kInvalidDataTypeErr);
   }
 
-  if (status != mesh::MeshResult::kSuccessful) {
+  if (!status) {
     return std::unexpected(status);
   }
 
@@ -130,7 +88,7 @@ auto tryGetDescriptorClass(const char *attr) -> std::expected<mesh::MeshCategory
 
 /// TODO(J): docs
 auto tryGetConceptPreference(const char *attr) -> std::expected<mesh::MeshCategory, mesh::MeshResult> {
-  auto status = mesh::MeshResult::kUnknownDataTypeErr;
+  auto status = mesh::MeshResult{mesh::MeshStatus::kUnknownDataTypeErr};
   if (attr == nullptr) {
     return std::unexpected(status);
   }
@@ -139,19 +97,19 @@ auto tryGetConceptPreference(const char *attr) -> std::expected<mesh::MeshCatego
     auto preference = common::coerceIntoBoolean(std::string_view(attr));
     return preference ? mesh::MeshCategory::kConceptPreferred : mesh::MeshCategory::kConceptNarrower;
   } catch (const std::exception &e) {
-    status = mesh::MeshResult::kInvalidDataTypeErr;
+    status.SetStatus(mesh::MeshStatus::kInvalidDataTypeErr);
   }
 
   return std::unexpected(status);
 }
 
 /// TODO(J): docs
-auto tryGetTermAttributes(const pugi::xml_node *node) -> std::expected<MeshTermAttr, mesh::MeshResult> {
+auto tryGetTermAttributes(const pugi::xml_node *node) -> std::expected<mesh::MeshTermAttr, mesh::MeshResult> {
   if (!node) {
-    return std::unexpected(mesh::MeshResult::kInvalidNodeTypeErr);
+    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kInvalidNodeTypeErr});
   }
 
-  auto result = MeshTermAttr{
+  auto result = mesh::MeshTermAttr{
     .cat = mesh::MeshCategory::kUnknown,
     .mod = mesh::MeshModifier::kUnknown,
   };
@@ -195,7 +153,7 @@ mesh::MeshDocument::MeshDocument(const char *filepath) {
   pool_ = arrow::MemoryPool::CreateDefault();
 
   auto result = loadFile(filepath);
-  std::printf("Result: %d\n", static_cast<uint8_t>(result));
+  std::printf("Result: %d\n", static_cast<uint8_t>(result.Status()));
 
   // TODO(J): err hnd
   // ...
@@ -210,7 +168,7 @@ auto mesh::MeshDocument::Load(const char *filepath) -> std::shared_ptr<mesh::Mes
 /// TODO(J): docs
 auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
   if (!std::filesystem::exists(filepath)) {
-    return MeshResult::kFileNotFoundErr;
+    return mesh::MeshResult{mesh::MeshStatus::kFileNotFoundErr};
   }
 
   auto doc    = pugi::xml_document{};
@@ -219,12 +177,12 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
     // NOTE:
     // -> xml_parse_result status = enum; with result.description() containing char rep
     // -> e.g. ... `auto status = result.status;`
-    return MeshResult::kXmlReadErr;
+    return mesh::MeshResult{mesh::MeshStatus::kXmlReadErr, result.description()};
   }
 
   auto root = doc.child(mesh::kRecordSetNode);
   if (!root) {
-    return MeshResult::kUnknownRootNodeErr;
+    return mesh::MeshResult{mesh::MeshStatus::kUnknownRootNodeErr};
   }
 
   for (const auto &node : root.children()) {
@@ -233,7 +191,7 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
     }
 
     auto res = parseRecords(static_cast<const void *>(&node));
-    if (res != mesh::MeshResult::kSuccessful) {
+    if (!res) {
       return res;
     }
   }
@@ -248,13 +206,13 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
               pool_->max_memory(),
               pool_->num_allocations());
 
-  return MeshResult::kSuccessful;
+  return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }
 
 /// TODO(J): docs
 auto mesh::MeshDocument::parseRecords(const void *nodePtr, const char *parent /*= nullptr*/) -> mesh::MeshResult {
   if (nodePtr == nullptr) {
-    return mesh::MeshResult::kInvalidNodeTypeErr;
+    return mesh::MeshResult{mesh::MeshStatus::kInvalidNodeTypeErr};
   }
 
   auto type = mesh::MeshType::kUnknown;
@@ -275,7 +233,7 @@ auto mesh::MeshDocument::parseRecords(const void *nodePtr, const char *parent /*
 
   const auto [uid, name] = fields.value();
   if (uid == nullptr || name == nullptr) {
-    return mesh::MeshResult::kInvalidDataTypeErr;
+    return mesh::MeshResult{mesh::MeshStatus::kInvalidDataTypeErr};
   }
 
   switch (type) {
@@ -310,22 +268,22 @@ auto mesh::MeshDocument::parseRecords(const void *nodePtr, const char *parent /*
     break;
 
   default:
-    return mesh::MeshResult::kInvalidDataTypeErr;
+    return mesh::MeshResult{mesh::MeshStatus::kInvalidDataTypeErr};
   };
 
   auto res = allocRecord(uid, name, parent, type, cat, mod);
-  if (res != mesh::MeshResult::kSuccessful) {
+  if (!res) {
     return res;
   }
 
   if (type == mesh::MeshType::kDescriptorRecord || type == mesh::MeshType::kConcept) {
     res = iterateChildren(nodePtr, type, uid);
-    if (res != mesh::MeshResult::kSuccessful) {
+    if (!res) {
       return res;
     }
   }
 
-  return mesh::MeshResult::kSuccessful;
+  return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }
 
 /// TODO(J): docs
@@ -333,7 +291,7 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
                                          const mesh::MeshType &type,
                                          const char           *uid) -> mesh::MeshResult {
   if (nodePtr == nullptr) {
-    return mesh::MeshResult::kSuccessful;
+    return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
   }
 
   const auto *node = static_cast<const pugi::xml_node *>(nodePtr);
@@ -341,7 +299,7 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
   case mesh::MeshType::kConcept: {
     auto terms = node->child(mesh::kTermListNode);
     if (!terms) {
-      return mesh::MeshResult::kSuccessful;
+      return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
     }
 
     for (const auto &child : terms.children()) {
@@ -350,12 +308,12 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
       }
 
       auto res = parseRecords(static_cast<const void *>(&child), uid);
-      if (res != mesh::MeshResult::kSuccessful) {
+      if (!res) {
         return res;
       }
     }
 
-    return mesh::MeshResult::kSuccessful;
+    return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
   } break;
 
   case mesh::MeshType::kDescriptorRecord: {
@@ -367,7 +325,7 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
         }
 
         auto res = parseRecords(static_cast<const void *>(&child), uid);
-        if (res != mesh::MeshResult::kSuccessful) {
+        if (!res) {
           return res;
         }
       }
@@ -381,20 +339,20 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
         }
 
         auto res = parseRecords(static_cast<const void *>(&child), uid);
-        if (res != mesh::MeshResult::kSuccessful) {
+        if (!res) {
           return res;
         }
       }
     }
 
-    return mesh::MeshResult::kSuccessful;
+    return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
   } break;
 
   default:
     break;
   }
 
-  return mesh::MeshResult::kInvalidNodeTypeErr;
+  return mesh::MeshResult{mesh::MeshStatus::kInvalidNodeTypeErr};
 }
 
 /// TODO(J): docs
@@ -416,7 +374,7 @@ auto mesh::MeshDocument::allocRecord(const char        *uid,
 
   uint8_t *ptr{nullptr};
   if (!pool_->Allocate(static_cast<int64_t>(record.uidLen + record.nameLen), &ptr).ok()) {
-    return mesh::MeshResult::kAllocationErr;
+    return mesh::MeshResult{mesh::MeshStatus::kAllocationErr};
   }
 
   std::memcpy(ptr, uid, record.uidLen);
@@ -424,5 +382,5 @@ auto mesh::MeshDocument::allocRecord(const char        *uid,
 
   record.bufPtr = reinterpret_cast<char *>(ptr);
   records_.emplace(record.bufPtr, record);
-  return mesh::MeshResult::kSuccessful;
+  return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }

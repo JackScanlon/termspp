@@ -24,7 +24,7 @@
 > - See hedronvision's compile commands extractor [here](https://github.com/hedronvision/bazel-compile-commands-extractor) for more information.
 
 Debugging using the CLI:
-1. Run `bazel run :refresh_compile_commands`
+1. Run `bazel run :refresh_compile_commands -- -c dbg`
 2. When debugging builds:
     - Build  `bazel build //src:termspp -c dbg --verbose_failures`
     - Run  `bazel run //src:termspp -c dbg`

@@ -8,10 +8,13 @@
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
 auto main() -> int {
+  // NOTE(J): temporary debug target defined by compiler oopt
   auto target = std::string{MACRO_STRINGIFY(RESOURCE_PATH)};
   std::printf("Target: %s\n", target.c_str());
 
   auto doc = termspp::mesh::MeshDocument::Load(target.c_str());
+
+  // TODO(J): hnd err
 
   return EXIT_SUCCESS;
 }
