@@ -11,7 +11,10 @@ exports_files(['LICENSE'])
 cc_binary(
   name = 'termspp',
   srcs = ['main.cpp'],
-  deps = ['//src/mesh:parser', ':definitions'],
+  deps = [
+    '//src/mesh:parser',
+    '//src:definitions',
+  ],
   data = select({
     '//:debug_build': ['//resources:xml_debug'],
     '//conditions:default': [],

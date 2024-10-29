@@ -22,3 +22,11 @@ cc_library(
   hdrs = ['strings.hpp'],
   include_prefix = 'termspp/common',
 )
+
+cc_library(
+  name = 'arena',
+  srcs = ['arena.cpp'],
+  hdrs = ['arena.hpp'],
+  deps = ['@mimalloc//:mimalloc-api'],
+  include_prefix = 'termspp/common',
+)

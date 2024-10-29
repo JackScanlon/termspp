@@ -23,10 +23,17 @@ config_setting(
   },
 )
 
+config_setting(
+  name = 'release_build',
+  values = {
+    'compilation_mode': 'opt',
+  },
+)
+
 # IDE integration
 refresh_compile_commands(
   name = 'refresh_compile_commands',
   targets = {
-    '//src:termspp': "-c dbg",
+    '//src:termspp': '-c dbg',
   },
 )

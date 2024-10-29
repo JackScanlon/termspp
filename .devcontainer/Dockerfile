@@ -39,15 +39,6 @@ RUN \
   update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 && \
   update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
 
-# Install apache arrow
-RUN \
-  curl -fsSL -o /tmp/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb https://apache.jfrog.io/artifactory/arrow/$(lsb_release --id --short | tr 'A-Z' 'a-z')/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb && \
-  apt-get install -q -y -V /tmp/apache-arrow-apt-source-latest-$(lsb_release --codename --short).deb
-
-RUN apt-get update && \
-  apt-get -q -y install libarrow-dev
-
-
 # Update tz + lang
 RUN \
   ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \

@@ -9,8 +9,14 @@ build:linux --platforms=//:linux
 build:linux --repo_env=CC=clang
 build:linux --extra_toolchains=@llvm_toolchain//:all
 build:linux --cxxopt=-std=c++2b
-build:linux --cxxopt=-stdlib=libc++
+build:linux --cxxopt=-stdlib=libstdc++
 build:linux --linkopt=-lstdc++
 
 # dbg
-build:debug --enable_runfiles --experimental_inprocess_symlink_creation --strip=never
+build:dbg -c dbg
+build:dbg --enable_runfiles --experimental_inprocess_symlink_creation --strip=never
+
+# release
+build:opt -c opt
+build:opt --copt="-O3"
+build:opt --strip=always

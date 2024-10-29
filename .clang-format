@@ -41,7 +41,7 @@ IncludeCategories:
     Priority: 5
   - Regex: '^"(llvm|llvm-c|llvm-dialects|clang|clang-c)/'
     Priority: 4
-  - Regex: '^((<|")(gtest|gmock|isl|json|arrow|pugixml)/?)'
+  - Regex: '^((<|")(gtest|gmock|isl|json|pugixml|nonstd|fastcsv)/?)'
     Priority: 3
   - Regex: '.*/'
     Priority: 2

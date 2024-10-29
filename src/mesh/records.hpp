@@ -7,6 +7,7 @@
 namespace termspp {
 namespace mesh {
 
+/// Const. format str used by `mesh::MeshResult` to fmt its description when given a message
 constexpr const auto kMeshResultFormatStr = std::string_view("%s with msg: %s");
 
 /// MeSH XML node types
@@ -57,7 +58,7 @@ enum class MeshModifier : uint8_t {
 /// MeSH record
 ///   - i.e. output shape of the parsed data
 struct MeshRecord {
-  char        *buf;        // Buf containing the record's UID & Name separated by a null terminator
+  char        *buf;        // Name + UID buf
   const char  *parentUid;  // Buf containing this element's parent UID (if any)
   uint16_t     uidLen;     // Length of the UID string described by `buf` & the name offset
   uint16_t     nameLen;    // Length the name string described by `buf`
@@ -95,7 +96,7 @@ struct MeshResult {
 
   /// Cast to bool op to test err state
   inline explicit operator bool() const {
-    return status_ != MeshStatus::kSuccessful;
+    return status_ == MeshStatus::kSuccessful;
   }
 
   /// Output stream friend insertion operator

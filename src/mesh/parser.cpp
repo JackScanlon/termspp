@@ -4,24 +4,23 @@
 #include "termspp/mesh/constants.hpp"
 #include "termspp/mesh/fields.hpp"
 
-#include "arrow/api.h"
+#include "nonstd/expected.hpp"
 #include "pugixml.hpp"
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <expected>
 #include <filesystem>
 
 namespace mesh   = termspp::mesh;
 namespace common = termspp::common;
 
 /// TODO(J): docs
-auto tryGetRecordType(const pugi::xml_node *node) -> std::expected<mesh::MeshType, mesh::MeshResult> {
+auto tryGetRecordType(const pugi::xml_node *node) -> nonstd::expected<mesh::MeshType, mesh::MeshResult> {
   const auto types = mesh::kNodeTypes();
   const auto type  = types.find(node->name());
   if (type == types.end()) {
-    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kUnknownNodeTypeErr});
+    return nonstd::make_unexpected(mesh::MeshResult{mesh::MeshStatus::kUnknownNodeTypeErr});
   }
 
   return type->second;
@@ -29,14 +28,14 @@ auto tryGetRecordType(const pugi::xml_node *node) -> std::expected<mesh::MeshTyp
 
 /// TODO(J): docs
 auto tryGetRecordFields(const mesh::MeshType &type,
-                        const pugi::xml_node *node) -> std::expected<mesh::MeshProps, mesh::MeshResult> {
+                        const pugi::xml_node *node) -> nonstd::expected<mesh::MeshProps, mesh::MeshResult> {
   const auto fields = mesh::kNodeFields();
   const auto schema = std::find_if(fields.begin(), fields.end(), [&](const mesh::MeshFields &elem) {
     return elem.nodeType == type;
   });
 
   if (schema == fields.end()) {
-    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kUnknownNodeTypeErr});
+    return nonstd::make_unexpected(mesh::MeshResult{mesh::MeshStatus::kUnknownNodeTypeErr});
   }
 
   const auto *uid  = node->child(schema->uidField).child_value();
@@ -52,7 +51,7 @@ auto tryGetRecordFields(const mesh::MeshType &type,
   }
 
   if (uid == nullptr || name == nullptr) {
-    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kInvalidDataTypeErr});
+    return nonstd::make_unexpected(mesh::MeshResult{mesh::MeshStatus::kInvalidDataTypeErr});
   }
 
   return mesh::MeshProps{
@@ -62,10 +61,10 @@ auto tryGetRecordFields(const mesh::MeshType &type,
 }
 
 /// TODO(J): docs
-auto tryGetDescriptorClass(const char *attr) -> std::expected<mesh::MeshCategory, mesh::MeshResult> {
+auto tryGetDescriptorClass(const char *attr) -> nonstd::expected<mesh::MeshCategory, mesh::MeshResult> {
   auto status = mesh::MeshResult{mesh::MeshStatus::kEmptyNodeDataErr};
   if (attr == nullptr || attr[0] == '\0') {
-    return std::unexpected(status);
+    return nonstd::make_unexpected(status);
   }
 
   auto result = mesh::MeshCategory::kUnknown;
@@ -80,17 +79,17 @@ auto tryGetDescriptorClass(const char *attr) -> std::expected<mesh::MeshCategory
   }
 
   if (!status) {
-    return std::unexpected(status);
+    return nonstd::make_unexpected(status);
   }
 
   return result;
 }
 
 /// TODO(J): docs
-auto tryGetConceptPreference(const char *attr) -> std::expected<mesh::MeshCategory, mesh::MeshResult> {
+auto tryGetConceptPreference(const char *attr) -> nonstd::expected<mesh::MeshCategory, mesh::MeshResult> {
   auto status = mesh::MeshResult{mesh::MeshStatus::kEmptyNodeDataErr};
   if (attr == nullptr) {
-    return std::unexpected(status);
+    return nonstd::make_unexpected(status);
   }
 
   try {
@@ -100,13 +99,13 @@ auto tryGetConceptPreference(const char *attr) -> std::expected<mesh::MeshCatego
     status.SetStatus(mesh::MeshStatus::kInvalidDataTypeErr);
   }
 
-  return std::unexpected(status);
+  return nonstd::make_unexpected(status);
 }
 
 /// TODO(J): docs
-auto tryGetTermAttributes(const pugi::xml_node *node) -> std::expected<mesh::MeshTermAttr, mesh::MeshResult> {
+auto tryGetTermAttributes(const pugi::xml_node *node) -> nonstd::expected<mesh::MeshTermAttr, mesh::MeshResult> {
   if (node == nullptr || !(*node)) {
-    return std::unexpected(mesh::MeshResult{mesh::MeshStatus::kNodeDoesNotExistErr});
+    return nonstd::make_unexpected(mesh::MeshResult{mesh::MeshStatus::kNodeDoesNotExistErr});
   }
 
   auto result = mesh::MeshTermAttr{
@@ -150,7 +149,7 @@ auto tryGetTermAttributes(const pugi::xml_node *node) -> std::expected<mesh::Mes
 
 /// TODO(J): docs
 mesh::MeshDocument::MeshDocument(const char *filepath) {
-  pool_ = arrow::MemoryPool::CreateDefault();
+  allocator_ = common::Arena::Create(mesh::MeshDocument::kArenaRegionSize);
 
   auto result = loadFile(filepath);
   std::printf("Result: %d | Msg: %s\n", static_cast<uint8_t>(result.Status()), result.Description().c_str());
@@ -171,13 +170,13 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
     return mesh::MeshResult{mesh::MeshStatus::kFileNotFoundErr};
   }
 
-  auto doc    = pugi::xml_document{};
-  auto result = doc.load_file(filepath);
+  auto doc    = std::make_unique<pugi::xml_document>();
+  auto result = doc->load_file(filepath);
   if (!result) {
     return mesh::MeshResult{mesh::MeshStatus::kXmlReadErr, result.description()};
   }
 
-  auto root = doc.child(mesh::kRecordSetNode);
+  auto root = doc->child(mesh::kRecordSetNode);
   if (!root) {
     return mesh::MeshResult{mesh::MeshStatus::kRootDoesNotExistErr};
   }
@@ -196,12 +195,6 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
   // for (const auto &[uid, rec] : records_) {
   //   std::printf("[SAMPLE] UID: %s | Name: %s\n", uid, rec.buf + rec.uidLen);
   // }
-
-  std::printf("[Pool: %s] Alloc: %ld | MaxMem alloc: %ld | Num allocs: %ld\n",
-              pool_->backend_name().c_str(),
-              pool_->bytes_allocated(),
-              pool_->max_memory(),
-              pool_->num_allocations());
 
   return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }
@@ -375,7 +368,7 @@ auto mesh::MeshDocument::allocRecord(const char        *uid,
   };
 
   uint8_t *ptr{nullptr};
-  if (!pool_->Allocate(static_cast<int64_t>(record.uidLen + record.nameLen), &ptr).ok()) {
+  if (!allocator_->Allocate(static_cast<int64_t>(record.uidLen + record.nameLen), &ptr)) {
     return mesh::MeshResult{mesh::MeshStatus::kAllocationErr};
   }
 
