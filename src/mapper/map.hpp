@@ -24,7 +24,7 @@ typedef bool (*MapPredicate)(MapRow &);
 
 /// Filter columns by index
 template <typename Container, typename Iter>
-auto ToggleIndices(Container &container, Iter beg, Iter end) -> decltype(std::end(container)) {
+auto RemoveIndices(Container &container, Iter beg, Iter end) -> decltype(std::end(container)) {
   size_t index{0};
   return std::stable_partition(
     std::begin(container), std::end(container), [&](typename Container::value_type const & /*val*/) -> bool {
@@ -94,7 +94,7 @@ template <uint16_t... Args>
 struct ColumnSelector {
   static auto Select(MapRow &row) -> void {
     static const std::vector<uint16_t> kSelected{Args...};
-    row.erase(ToggleIndices(row, kSelected.begin(), kSelected.end()), row.end());
+    row.erase(RemoveIndices(row, kSelected.begin(), kSelected.end()), row.end());
   }
 };
 
