@@ -7,19 +7,6 @@
 namespace termspp {
 namespace common {
 
-/// Remove operator predicate using indices
-template <class ForwardIt, class UnaryPredicate>
-auto RemoveIndicesIf(ForwardIt first, ForwardIt last, UnaryPredicate pred) -> ForwardIt {
-  ForwardIt iter = first;
-  for (ForwardIt indx = first; indx != last; ++indx) {
-    if (!pred(std::distance(first, indx))) {
-      *iter++ = std::move(*indx);
-    }
-  }
-
-  return iter;
-}
-
 /// Hash fn to group char* keys into buckets for `std::unordered_map`
 struct CharHash {
 public:
