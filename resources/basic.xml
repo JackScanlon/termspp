@@ -1,6 +1,34 @@
+<!-- e.g. some MeSH def -->
 <?xml version="1.0" encoding="UTF-8"?>
-<tree name="data">
-  <node id="1">
-  </node>
-  <node id="2" />
-</tree>
+<DescriptorRecordSet>
+  <DescriptorRecord DescriptorClass="1">
+    <DescriptorUI>C0000005</DescriptorUI>
+    <DescriptorName>
+      <String>Resource Test</String>
+    </DescriptorName>
+    <AllowableQualifiersList>
+      <AllowableQualifier>
+        <QualifierReferredTo>
+          <QualifierUI>Q000008</QualifierUI>
+          <QualifierName>
+            <String>administration &amp; dosage</String>
+          </QualifierName>
+        </QualifierReferredTo>
+      </AllowableQualifier>
+    </AllowableQualifiersList>
+    <ConceptList>
+      <Concept PreferredConceptYN="Y">
+        <ConceptUI>M0000003</ConceptUI>
+        <ConceptName>
+          <String>Abattoirs</String>
+        </ConceptName>
+        <TermList>
+          <Term ConceptPreferredTermYN="Y" IsPermutedTermYN="N" LexicalTag="NON" RecordPreferredTermYN="Y">
+            <TermUI>T000009</TermUI>
+            <String>Abattoirs</String>
+          </Term>
+        </TermList>
+      </Concept>
+    </ConceptList>
+  </DescriptorRecord>
+</DescriptorRecordSet>

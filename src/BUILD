@@ -12,7 +12,9 @@ cc_binary(
   name = 'termspp',
   srcs = ['main.cpp'],
   deps = [
+    '//src/common:utils',
     '//src/mesh:parser',
+    '//src/mapper:mapping',
     '//src:definitions',
   ],
   data = select({
@@ -23,18 +25,26 @@ cc_binary(
 
 # Opt flags
 string_flag(
-  name = 'RESOURCE_PATH',
-  build_setting_default = '/workspaces/termspp/.data/desc2024.xml',
+  name = 'DBG_MSH_PATH',
+  build_setting_default = '/workspaces/termspp/.data/small.xml', # desc2024
+)
+
+string_flag(
+  name = 'DBG_MAP_PATH',
+  build_setting_default = '/workspaces/termspp/.data/small.RRF', # MRCONSO.RRF
 )
 
 # Define flags
 define_config(
   name = 'definitions',
   flags = [
-    ':RESOURCE_PATH',
+    ':DBG_MSH_PATH',
+    ':DBG_MAP_PATH',
   ],
   defines = select({
-    '//:debug_build': ['DEBUG=1'],
+    '//:debug_build': [
+      'DEBUG=1'
+    ],
     '//conditions:default': [],
   }),
 )

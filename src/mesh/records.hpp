@@ -1,5 +1,7 @@
 #pragma once
 
+#include "termspp/common/utils.hpp"
+
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -7,7 +9,9 @@
 namespace termspp {
 namespace mesh {
 
-/// Const. format str used by `mesh::MeshResult` to fmt its description when given a message
+namespace common = termspp::common;
+
+/// Const. format str used by `mesh::MeshResult` to fmt its description
 constexpr const auto kMeshResultFormatStr = std::string_view("%s with msg: %s");
 
 /// MeSH XML node types
@@ -84,45 +88,22 @@ enum class MeshStatus : uint8_t {
 
 /// Op result descriptor
 ///   - defines status, and assoc. message, describing whether an op succeeded
-struct MeshResult {
-  /// Default constructor which initialises as an unknown err type
-  MeshResult() = default;
+typedef common::Result<MeshStatus, MeshStatus::kSuccessful> MeshResultBase;
+
+struct MeshResult final : public MeshResultBase {
+  // Default constructor
+  MeshResult() : MeshResultBase(MeshStatus::kUnknownErr) {};
 
   /// Construct with a status
-  explicit MeshResult(MeshStatus status) : status_(status) {};
+  explicit MeshResult(MeshStatus status) : MeshResultBase(status) {};
 
   /// Construct with a status and attach an err message
-  explicit MeshResult(MeshStatus status, std::string message) : status_(status), message_(std::move(message)) {};
-
-  /// Cast to bool op to test err state
-  inline explicit operator bool() const {
-    return status_ == MeshStatus::kSuccessful;
-  }
-
-  /// Output stream friend insertion operator
-  inline friend auto operator<<(std::ostream &stream, const MeshResult &obj)->std::ostream & {
-    return stream << obj.Description();
-  }
-
-  /// Setter: set the result status
-  inline auto SetStatus(MeshStatus status) -> void {
-    status_ = status;
-  }
-
-  /// Setter: set the result message
-  inline auto SetMessage(std::string str) -> void {
-    message_ = std::move(str);
-  }
-
-  /// Getter: get the result status
-  [[nodiscard]] inline auto Status() const -> MeshStatus {
-    return status_;
-  }
+  MeshResult(MeshStatus status, std::string message) : MeshResultBase(status, std::move(message)) {};
 
   /// Getter: resolve the description assoc. with the result's status
-  [[nodiscard]] inline auto Description() const -> std::string {
+  [[nodiscard]] auto Description() const -> std::string override {
     auto result = std::string{};
-    switch (status_) {
+    switch (Status()) {
     case MeshStatus::kSuccessful:
       result = "Success";
       break;
@@ -154,26 +135,20 @@ struct MeshResult {
       break;
     }
 
-    if (!message_.empty()) {
-      auto size = std::snprintf(nullptr, 0, kMeshResultFormatStr.data(), result.c_str(), message_.c_str()) + 1;
+    auto msg = Message();
+    if (!msg.empty()) {
+      auto size = std::snprintf(nullptr, 0, kMeshResultFormatStr.data(), result.c_str(), msg.c_str());
       if (size > 0) {
+        size++;
+
         auto fmt = std::string(size, '0');
-        std::snprintf(fmt.data(), size, kMeshResultFormatStr.data(), result.c_str(), message_.c_str());
+        std::snprintf(fmt.data(), size, kMeshResultFormatStr.data(), result.c_str(), msg.c_str());
         return fmt;
       }
     }
 
     return result;
   }
-
-  /// Sugar for bool() conversion operator reflecting the success status
-  [[nodiscard]] inline auto Ok() const -> bool {
-    return status_ == MeshStatus::kSuccessful;
-  }
-
-private:
-  MeshStatus  status_{MeshStatus::kUnknownErr};  // Op status, see termspp::mesh::MeshStatus
-  std::string message_;                          // Optional message alongside derived description
 };
 
 }  // namespace mesh

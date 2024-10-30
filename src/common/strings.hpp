@@ -6,7 +6,9 @@
 namespace termspp {
 namespace common {
 
-/// Non-whitespace predicate to test whether a typed CharT is a whitespace char(T)
+/// Non-whitespace predicate to find a non-whitespace char of type T
+///   - used by `trim*` methods to find the first non-whitespace character to find the trimmable
+//      boundaries
 template <typename CharT>
 class NotWhitespace : public std::function<bool(CharT)> {
   static constexpr const CharT kWhitespace[] = {
@@ -26,7 +28,7 @@ public:
   }
 };
 
-/// Trims whitespace characters from a string-like object
+/// Removes leading whitespace chars of type T from a string-like object
 template <typename CharT, typename TraitsT, typename AllocT>
 inline auto trimLeft(std::basic_string<CharT, TraitsT, AllocT> &input) -> uint32_t {
   typedef std::basic_string<CharT, TraitsT, AllocT> StrType;
@@ -39,7 +41,7 @@ inline auto trimLeft(std::basic_string<CharT, TraitsT, AllocT> &input) -> uint32
   return distance;
 }
 
-/// Remove leading whitespace from a string-like object
+/// Removes trailing whitespace chars of type T from a string-like object
 template <typename CharT, typename TraitsT, typename AllocT>
 inline auto trimRight(std::basic_string<CharT, TraitsT, AllocT> &input) -> uint32_t {
   typedef std::basic_string<CharT, TraitsT, AllocT> StrType;
@@ -52,7 +54,7 @@ inline auto trimRight(std::basic_string<CharT, TraitsT, AllocT> &input) -> uint3
   return distance;
 }
 
-/// Remove trailing whitespace from a string-like object
+/// Remove trailing & leading whitespace chars of type T from a string-like object
 template <typename CharT, typename TraitsT, typename AllocT>
 inline auto trim(std::basic_string<CharT, TraitsT, AllocT> &input) -> uint32_t {
   uint32_t trimmed = 0;

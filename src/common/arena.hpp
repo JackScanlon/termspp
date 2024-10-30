@@ -8,8 +8,11 @@
 namespace termspp {
 namespace common {
 
-static constexpr const int64_t kDefaultArenaSize = 4096;
+/// TODO(J): docs
+static constexpr size_t        kArenaAlignment   = 64L;
+static constexpr const int64_t kDefaultArenaSize = 4096LL;
 
+/// TODO(J): docs
 class Arena final {
 public:
   static auto Create(int64_t csize = kDefaultArenaSize) -> std::unique_ptr<Arena>;
@@ -20,7 +23,8 @@ public:
   Arena(Arena const &)                   = delete;
   auto operator=(Arena const &)->Arena & = delete;
 
-  auto Allocate(int64_t size, uint8_t **ptr) -> bool;
+  [[nodiscard]] auto Allocate(int64_t size, uint8_t **ptr) -> bool;
+
   auto Release() -> void;
 
 private:
@@ -29,14 +33,16 @@ private:
     int64_t  size;
   };
 
-  auto allocateRegion(int64_t size) -> bool;
+  [[nodiscard]] auto allocateRegion(int64_t size) -> bool;
+
   auto releaseRegions(bool destroy = false) -> void;
 
 private:
+  uint8_t *cbuf_;
   int64_t  mcsize_;
   int64_t  rsize_;
-  uint8_t *cbuf_;
 
+  // NOTE(J): should probably be a linked list instread?
   std::vector<Region> regions_;
 
 protected:

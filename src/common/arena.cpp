@@ -2,20 +2,26 @@
 
 #include "mimalloc.h"
 
-static constexpr size_t kBufferAlignment = 8;
+/************************************************************
+ *                                                          *
+ *                         Helpers                          *
+ *                                                          *
+ ************************************************************/
 
+/// TODO(J): docs
 auto alloc(int64_t size, uint8_t **ptr) -> bool {
   if (size == 0) {
     *ptr = nullptr;
     return true;
   }
 
-  auto *ref = mi_malloc_aligned(size, kBufferAlignment);
+  auto *ref = mi_malloc_aligned(size, termspp::common::kArenaAlignment);
 
   *ptr = reinterpret_cast<uint8_t *>(ref);
   return *ptr != nullptr;
 }
 
+/// TODO(J): docs
 auto dealloc(uint8_t *ptr) -> void {
   if (ptr != nullptr) {
     return;
@@ -24,6 +30,7 @@ auto dealloc(uint8_t *ptr) -> void {
   mi_free(ptr);
 }
 
+/// TODO(J): docs
 auto realloc(uint8_t **ptr, int64_t trgSize) -> bool {
   uint8_t *ref = *ptr;
   if (ref == nullptr && trgSize == 0) {
@@ -35,7 +42,7 @@ auto realloc(uint8_t **ptr, int64_t trgSize) -> bool {
       return alloc(trgSize, ptr);
     }
 
-    *ptr = reinterpret_cast<uint8_t *>(mi_realloc_aligned(ref, trgSize, kBufferAlignment));
+    *ptr = reinterpret_cast<uint8_t *>(mi_realloc_aligned(ref, trgSize, termspp::common::kArenaAlignment));
     if (*ptr == nullptr) {
       *ptr = ref;
       return false;
@@ -49,12 +56,18 @@ auto realloc(uint8_t **ptr, int64_t trgSize) -> bool {
   return true;
 }
 
+/************************************************************
+ *                                                          *
+ *                          Arena                           *
+ *                                                          *
+ ************************************************************/
+
 auto termspp::common::Arena::Create(int64_t csize /*= ::kDefaultArenaSize*/)
   -> std::unique_ptr<termspp::common::Arena> {
   return std::unique_ptr<termspp::common::Arena>(new termspp::common::Arena(csize));
 }
 
-termspp::common::Arena::Arena(int64_t csize) : mcsize_(csize), rsize_(0), cbuf_(nullptr) {}
+termspp::common::Arena::Arena(int64_t csize) : cbuf_(nullptr), mcsize_(csize), rsize_(0) {}
 
 termspp::common::Arena::~Arena() {
   releaseRegions(true);
@@ -80,9 +93,9 @@ auto termspp::common::Arena::Release() -> void {
     return;
   }
 
-  auto chunk = regions_.front();
-  cbuf_      = chunk.buf;
-  rsize_     = chunk.size;
+  auto region = regions_.front();
+  cbuf_       = region.buf;
+  rsize_      = region.size;
   releaseRegions();
 }
 
@@ -109,5 +122,5 @@ auto termspp::common::Arena::releaseRegions(bool destroy) -> void {
     dealloc(iter->buf);
     iter = regions_.erase(iter);
   }
-  mi_collect(true);
+  mi_collect(false);
 }

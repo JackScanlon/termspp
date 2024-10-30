@@ -52,7 +52,7 @@ public:
 /// ```
 ///
 template <typename T, typename Fn>
-[[nodiscard]] inline auto ScopedDeleter(T *resource_, Fn &&fn_) -> ScopedDeleterImpl<T, Fn> {
+[[nodiscard]] auto ScopedDeleter(T *resource_, Fn &&fn_) -> ScopedDeleterImpl<T, Fn> {
   return ScopedDeleterImpl<T, Fn>{resource_, fn_};
 }
 
@@ -93,7 +93,7 @@ public:
 /// ```
 ///
 template <typename Fn>
-[[nodiscard]] inline auto OnScopeExit(Fn &&fn_) -> OnScopeExitImpl<Fn> {
+[[nodiscard]] auto OnScopeExit(Fn &&fn_) -> OnScopeExitImpl<Fn> {
   return OnScopeExitImpl<Fn>{fn_};
 }
 

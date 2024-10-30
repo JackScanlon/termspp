@@ -23,6 +23,7 @@ Checks: >
   -bugprone-sizeof-expression,
   -bugprone-narrowing-conversions,
   -bugprone-unchecked-optional-access,
+  -bugprone-easily-swappable-parameters,
   performance-*,
   -performance-enum-size,
   -performance-unnecessary-value-param,

@@ -54,7 +54,7 @@ static const auto kNodeTypes = []() {
 
 /// MeSH XML attribute modifier map
 ///   - used to map the XML Node's attribute value to its corresponding `mesh::MeshModifier`
-inline static const auto kMeshModifiers = []() {
+static const auto kMeshModifiers = []() {
   return std::unordered_map<std::string_view, mesh::MeshModifier>{
     {"NON", mesh::MeshModifier::kTermLexNon},
     {"ABB", mesh::MeshModifier::kTermLexAbb},

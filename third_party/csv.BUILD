@@ -7,4 +7,5 @@ cc_library(
   name = 'csv_parser',
   hdrs = ['csv.h'],
   include_prefix = 'fastcsv',
+  linkopts = ['-lpthread']
 )

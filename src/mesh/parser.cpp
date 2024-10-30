@@ -15,6 +15,12 @@
 namespace mesh   = termspp::mesh;
 namespace common = termspp::common;
 
+/************************************************************
+ *                                                          *
+ *                         Helpers                          *
+ *                                                          *
+ ************************************************************/
+
 /// TODO(J): docs
 auto tryGetRecordType(const pugi::xml_node *node) -> nonstd::expected<mesh::MeshType, mesh::MeshResult> {
   const auto types = mesh::kNodeTypes();
@@ -147,24 +153,33 @@ auto tryGetTermAttributes(const pugi::xml_node *node) -> nonstd::expected<mesh::
   return result;
 }
 
-/// TODO(J): docs
+/************************************************************
+ *                                                          *
+ *                       MeshDocument                       *
+ *                                                          *
+ ************************************************************/
+
 mesh::MeshDocument::MeshDocument(const char *filepath) {
   allocator_ = common::Arena::Create(mesh::MeshDocument::kArenaRegionSize);
-
-  auto result = loadFile(filepath);
-  std::printf("Result: %d | Msg: %s\n", static_cast<uint8_t>(result.Status()), result.Description().c_str());
-
-  // TODO(J): err hnd
-  // ...
+  result_    = loadFile(filepath);
 };
-
-mesh::MeshDocument::~MeshDocument() = default;
 
 auto mesh::MeshDocument::Load(const char *filepath) -> std::shared_ptr<mesh::MeshDocument> {
   return std::shared_ptr<mesh::MeshDocument>(new mesh::MeshDocument(filepath));
 }
 
-/// TODO(J): docs
+auto mesh::MeshDocument::Ok() const -> bool {
+  return result_.Ok();
+}
+
+auto mesh::MeshDocument::Status() const -> mesh::MeshStatus {
+  return result_.Status();
+}
+
+auto mesh::MeshDocument::GetResult() const -> mesh::MeshResult {
+  return result_;
+}
+
 auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
   if (!std::filesystem::exists(filepath)) {
     return mesh::MeshResult{mesh::MeshStatus::kFileNotFoundErr};
@@ -199,7 +214,6 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
   return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }
 
-/// TODO(J): docs
 auto mesh::MeshDocument::parseRecords(const void *nodePtr, const char *parentUid /*= nullptr*/) -> mesh::MeshResult {
   if (nodePtr == nullptr) {
     return mesh::MeshResult{mesh::MeshStatus::kNodeDoesNotExistErr};
@@ -280,7 +294,6 @@ auto mesh::MeshDocument::parseRecords(const void *nodePtr, const char *parentUid
   return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }
 
-/// TODO(J): docs
 auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
                                          const mesh::MeshType &type,
                                          const char           *parentUid) -> mesh::MeshResult {
@@ -350,7 +363,6 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
   return result;
 }
 
-/// TODO(J): docs
 auto mesh::MeshDocument::allocRecord(const char        *uid,
                                      const char        *name,
                                      const char        *parentUid,
