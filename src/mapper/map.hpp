@@ -10,6 +10,7 @@
 #include <cstring>
 #include <filesystem>
 #include <memory>
+#include <regex>
 #include <sstream>
 #include <string_view>
 #include <tuple>
@@ -25,6 +26,13 @@ namespace mapper {
  *                         Helpers                          *
  *                                                          *
  ************************************************************/
+
+/// MRCONSO const.
+///   - See: https://www.ncbi.nlm.nih.gov/books/NBK9685/table/ch03.T.concept_names_and_sources_file_mr/
+constexpr const size_t kConsoColumnWidth    = 18U;
+constexpr const size_t kConsoLangColIndex   = 1U;
+constexpr const size_t kConsoSuppColIndex   = 16U;
+constexpr const size_t kConsoSourceColIndex = 11U;
 
 /// Mem. alignment
 constexpr const size_t kMapRowAlignment    = 16U;
@@ -150,6 +158,32 @@ struct ColumnSelect {
     static const std::vector<uint16_t> kSelected{Args...};
     row.cols.erase(FilterColumnIndices(row.cols, row.size, kSelected.begin(), kSelected.end()), row.cols.end());
   }
+};
+
+/************************************************************
+ *                                                          *
+ *                         Filters                          *
+ *                                                          *
+ ************************************************************/
+
+/// Filter for the `MRCONSO.RRF` definition file
+static auto consoFilter(MapRow &row) -> bool {
+  static const auto kCodingSystemPattern = std::regex{"^(SNOMED|MSH)"};
+
+  // Ignore empty
+  auto cols = row.cols;
+  if (cols.size() < kConsoColumnWidth) {
+    return true;
+  }
+
+  // Ignore non-English & any obsolete rows
+  if (cols.at(kConsoLangColIndex) != "ENG" || cols.at(kConsoSuppColIndex) == "O") {
+    return true;
+  }
+
+  // Ignore any row that doesn't reference SCT / MeSH terms
+  auto sab = cols.at(kConsoSourceColIndex);
+  return !std::regex_search(sab.begin(), sab.end(), kCodingSystemPattern);
 };
 
 /************************************************************
@@ -301,10 +335,10 @@ private:
           continue;
         }
 
-        // Clip extents
+        // Clip extents since sv isn't null term'd
         auto cuid_value = std::string{cols.at(0).data(), cols.at(0).length()};  // CUID
         auto src_value  = std::string{cols.at(1).data(), cols.at(1).length()};  // SAB
-        auto trg_value  = std::string{cols.at(2).data(), cols.at(2).length()};  // term/code
+        auto trg_value  = std::string{cols.at(2).data(), cols.at(2).length()};  // CODE/TERM
 
         // Ensure unique
         auto mapped      = records_.find(cuid_value.c_str());
@@ -322,12 +356,11 @@ private:
         }
 
         auto record = result.value();
-        if (has_mapping) {
-          mapped->second.emplace(map_key, record);
-        } else {
-          auto [targets, inserted] = records_.emplace(record.buf, MapTargets{});
-          targets->second.emplace(map_key, record);
+        if (!has_mapping) {
+          auto [iter, ins] = records_.emplace(record.buf, MapTargets{});
+          mapped           = iter;
         }
+        mapped->second.emplace(map_key, record);
       }
     } catch (const std::exception &err) {
       result_ = mapper::MapResult{mapper::MapStatus::kLineReaderErr, err.what()};
@@ -338,10 +371,10 @@ private:
   }
 
 private:
-  std::string_view               target_;     // Document target resource
-  MapResult                      result_;     // Parsing result & document validity
-  RecordMap                      records_;    // Map records
-  std::unique_ptr<common::Arena> allocator_;  // Arena allocator
+  std::string_view               target_;     /// Document target resource
+  MapResult                      result_;     /// Parsing result & document validity
+  RecordMap                      records_;    /// Map records
+  std::unique_ptr<common::Arena> allocator_;  /// Arena allocator
 
 protected:
   /// Map document constructor
@@ -349,6 +382,27 @@ protected:
     buildMapping(filepath);
   }
 };
+
+/************************************************************
+ *                                                          *
+ *                        Map decl.                         *
+ *                                                          *
+ ************************************************************/
+
+/// MRCONSO columns of interest
+///   - Col [ 0] -> CUID
+///   - Col [11] -> SAB
+///   - Col [13] -> CODE/TERM
+typedef ColumnSelect<0, 11, 13> ConsoCols;  // NOLINT
+
+// clang-format off
+// NOLINTBEGIN
+typedef MapDocument<ColumnDelimiter<'|'>,    // Columns delimited by pipe
+                    RowFilter<consoFilter>,  // Filter rows by lang
+                    ConsoCols                // Select CUID, SAB & CODE
+                   > ConsoReader;            // <MapDocument<...>>
+// NOLINTEND
+// clang-format on
 
 }  // namespace mapper
 }  // namespace termspp

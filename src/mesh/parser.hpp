@@ -76,10 +76,10 @@ private:
                    MeshModifier mod = MeshModifier::kUnknown) -> MeshResult;
 
 private:
-  std::string_view                        target_;     // Document target resource
-  MeshResult                              result_;     // Parsing result & document validity
-  MeshRecords                             records_;    // MeSH UID reference map
-  std::unique_ptr<termspp::common::Arena> allocator_;  // Arena allocator
+  std::string_view                        target_;     /// Document target resource
+  MeshResult                              result_;     /// Parsing result & document validity
+  MeshRecords                             records_;    /// MeSH UID reference map
+  std::unique_ptr<termspp::common::Arena> allocator_;  /// Arena allocator
 
 protected:
   /// MeSH document constructor
