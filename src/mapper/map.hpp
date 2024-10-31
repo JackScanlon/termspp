@@ -159,13 +159,23 @@ struct ColumnSelect {
  ************************************************************/
 
 /// Uid reference map type
+///
+/// Note: we should've probably just split up the line buffer and/or used the hash directly
+///       since we've wasted mem by assigning string pairs here...
 typedef std::pair<std::string, std::string>                                              MapKey;
 typedef std::unordered_map<MapKey, MapRecord, common::PairHash>                          MapTargets;
 typedef std::unordered_map<const char *, MapTargets, common::CharHash, common::CharComp> RecordMap;
 
 /// SCT<->MeSH Document
-///   - Maps SCT & MeSH codes defined by the following ref:
+///   - Maps SCT & MeSH codes described in the following ref:
 ///     https://www.ncbi.nlm.nih.gov/books/NBK9685/table/ch03.T.concept_names_and_sources_file_mr/
+///
+/// [!] Issues:
+///   - Policies here were used here when assessing how best to map the source documents; we should probably
+///     move to a more definitive class at some point to reduce comp. times
+///
+///   - Similarly, we're still incl. fastcsv as a dependency but we're only using it as a file reader now; we
+///     should just remove it and buffer the file ourselves
 ///
 template <class DelimiterPolicy = ColumnDelimiter<>,
           class FilterPolicy    = NoRowFilter,

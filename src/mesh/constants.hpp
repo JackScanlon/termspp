@@ -26,7 +26,7 @@ constexpr const char *kStringField = "String";  // char[*]: Inner text of which 
 ///
 /// Describes the MeSH nodes of interest to us, i.e. `<${name:-DescriptorRecord} />`
 ///   - Note that we're intentionally ignoring the relationships defined by `<ConceptRelation />` here as
-///     we're not interested in
+///     we're mostly using MeSH as a lookup
 ///
 constexpr const char *kRecordSetNode = "DescriptorRecordSet";      // [ Root]: Document root
 constexpr const char *kRecordNode    = "DescriptorRecord";         // [Child]: <DescriptorRecordSet/>'s child
