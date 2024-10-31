@@ -21,6 +21,8 @@ enum class MapStatus : uint8_t {
   kFileNotFoundErr,  // File wasn't found when attempting to load the file
   kFileInitErr,      // Failed to initialise line reader
   kLineReaderErr,    // Failed to read line
+  kAllocationErr,    // Failed to allocate memory
+  kNoRowData,        // No row data was parsed for this row
   kSuccessful,       // No error
 };
 
@@ -53,6 +55,12 @@ struct MapResult final : public MapResultBase {
       break;
     case MapStatus::kLineReaderErr:
       result = "Failed to read line";
+      break;
+    case MapStatus::kAllocationErr:
+      result = "Failed to allocate memory";
+      break;
+    case MapStatus::kNoRowData:
+      result = "No data was parsed for this row";
       break;
     case MapStatus::kUnknownErr:
     default:

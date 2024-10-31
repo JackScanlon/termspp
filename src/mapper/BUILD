@@ -9,8 +9,9 @@ cc_library(
   name = 'mapping',
   hdrs = ['map.hpp', 'defs.hpp'],
   deps = [
-    '//src/common:utils',
+    '//src/common:arena',
 
+    '@com_github_martinmoene_expected//:expected',
     '@com_github_ben-strasser_fast-cpp-csv-parser//:csv_parser',
   ],
   include_prefix = 'termspp/mapper',

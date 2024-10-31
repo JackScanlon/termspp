@@ -5,6 +5,7 @@
 #include "termspp/mesh/records.hpp"
 
 #include <memory>
+#include <string_view>
 #include <unordered_map>
 
 namespace termspp {
@@ -16,7 +17,10 @@ namespace common = termspp::common;
 ///   - Responsible for parsing MeSH XML docs
 class MeshDocument final : public std::enable_shared_from_this<MeshDocument> {
   /// Arena allocator region size
-  static constexpr const size_t kArenaRegionSize = 8192LL;
+  static constexpr const size_t kArenaRegionSize{8192LL};
+
+  /// Reserve an `unordered_map` or size `root.children.length()*kReserveMulti`
+  static constexpr const size_t kReserveMulti{2L};
 
   /// Uid reference map type
   typedef std::unordered_map<const char *, MeshRecord, common::CharHash, common::CharComp> RecordMap;
@@ -34,9 +38,13 @@ public:
   auto operator=(MeshDocument const &)->MeshDocument & = delete;
 
   /// TODO(J): docs
-  auto Ok() const -> bool;
-  auto Status() const -> MeshStatus;
-  auto GetResult() const -> MeshResult;
+  [[nodiscard]] auto Ok() const -> bool;
+  [[nodiscard]] auto Status() const -> MeshStatus;
+  [[nodiscard]] auto GetResult() const -> MeshResult;
+  [[nodiscard]] auto GetTarget() const -> std::string_view;
+
+  /// TODO(J): docs
+  [[nodiscard]] auto HasIdentifier(const char *ident) -> bool;
 
 private:
   /// TODO(J): docs
@@ -57,6 +65,7 @@ private:
                    MeshModifier mod = MeshModifier::kUnknown) -> MeshResult;
 
 private:
+  std::string_view                        target_;     // Document target resource
   MeshResult                              result_;     // Parsing result & document validity
   RecordMap                               records_;    // MeSH UID reference map
   std::unique_ptr<termspp::common::Arena> allocator_;  // Arena allocator

@@ -26,12 +26,12 @@ cc_binary(
 # Opt flags
 string_flag(
   name = 'DBG_MSH_PATH',
-  build_setting_default = '/workspaces/termspp/.data/small.xml', # desc2024
+  build_setting_default = '/workspaces/termspp/.data/desc2024.xml', # desc2024
 )
 
 string_flag(
   name = 'DBG_MAP_PATH',
-  build_setting_default = '/workspaces/termspp/.data/small.RRF', # MRCONSO.RRF
+  build_setting_default = '/workspaces/termspp/.data/MRCONSO.RRF', # MRCONSO.RRF
 )
 
 # Define flags

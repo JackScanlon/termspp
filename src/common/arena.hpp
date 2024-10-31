@@ -9,7 +9,7 @@ namespace termspp {
 namespace common {
 
 /// TODO(J): docs
-static constexpr size_t        kArenaAlignment   = 64L;
+static constexpr size_t        kArenaAlignment   = 16L;
 static constexpr const int64_t kDefaultArenaSize = 4096LL;
 
 /// TODO(J): docs

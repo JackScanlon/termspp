@@ -180,6 +180,18 @@ auto mesh::MeshDocument::GetResult() const -> mesh::MeshResult {
   return result_;
 }
 
+auto mesh::MeshDocument::GetTarget() const -> std::string_view {
+  return target_;
+}
+
+auto mesh::MeshDocument::HasIdentifier(const char *ident) -> bool {
+  if (!result_.Ok()) {
+    return false;
+  }
+
+  return records_.find(ident) != records_.end();
+}
+
 auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
   if (!std::filesystem::exists(filepath)) {
     return mesh::MeshResult{mesh::MeshStatus::kFileNotFoundErr};
@@ -187,6 +199,7 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
 
   auto doc    = std::make_unique<pugi::xml_document>();
   auto result = doc->load_file(filepath);
+  target_     = filepath;
   if (!result) {
     return mesh::MeshResult{mesh::MeshStatus::kXmlReadErr, result.description()};
   }
@@ -196,7 +209,10 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
     return mesh::MeshResult{mesh::MeshStatus::kRootDoesNotExistErr};
   }
 
-  for (const auto &node : root.children()) {
+  auto children = root.children();
+  records_.reserve(std::distance(children.begin(), children.end()) * kReserveMulti);
+
+  for (const auto &node : children) {
     if (std::strcmp(node.name(), mesh::kRecordNode) != 0) {
       continue;
     }

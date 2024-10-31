@@ -3,6 +3,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+#include <regex>
 #include <string>
 
 #define STRINGIFY(x)       #x
@@ -10,6 +11,27 @@
 
 namespace mesh   = termspp::mesh;
 namespace mapper = termspp::mapper;
+
+constexpr const size_t kConsoColumnWidth    = 18U;
+constexpr const size_t kConsoLangColIndex   = 1U;
+constexpr const size_t kConsoSuppColIndex   = 16U;
+constexpr const size_t kConsoSourceColIndex = 11U;
+
+auto conso_filter(mapper::MapRow &row) -> bool {
+  static const auto kCodingSystemPattern = std::regex{"^(SNOMED|MSH)"};
+
+  auto cols = row.cols;
+  if (cols.size() < kConsoColumnWidth) {
+    return true;
+  }
+
+  if (cols.at(kConsoLangColIndex) != "ENG" || cols.at(kConsoSuppColIndex) == "O") {
+    return true;
+  }
+
+  auto sab = cols.at(kConsoSourceColIndex);
+  return !std::regex_search(sab.begin(), sab.end(), kCodingSystemPattern);
+};
 
 auto main() -> int {
   // TODO(J):
@@ -39,22 +61,22 @@ auto main() -> int {
 
 #if defined(DBG_MAP_PATH)
   map_target = std::string{MACRO_STRINGIFY(DBG_MAP_PATH)};
-  std::printf("[Debug: %6s] Resource target: %s\n", "Mapped", map_target.c_str());
+  std::printf("[Debug: %6s] Resource target: %s\n", "Mapper", map_target.c_str());
 
   // clang-format off
-  /// Some example row filter for RowFilter<T> policy...
-  auto lang_filter = [](mapper::MapRow &data) -> bool {
-    return (data.size() < 2 || data.at(1) != "ENG");
-  };
-
-  /// Some example MapDocument with policies...
-  typedef mapper::MapDocument<mapper::ColumnDelimiter<'|'>,  // Columns delimited by pipe
-                              mapper::RowFilter<lang_filter>, // Filter rows by lang
-                              mapper::ColumnSelector<0, 1>  // Select 1st and 2nd columns
-                              > MapReader;                   // <MapReader>
+  // NOLINTBEGIN
+  typedef mapper::MapDocument<mapper::ColumnDelimiter<'|'>,    // Columns delimited by pipe
+                              mapper::RowFilter<conso_filter>, // Filter rows by lang
+                              mapper::ColumnSelect<0,11,12,13> // Select 1st and 2nd columns
+                              > MapReader;                     // <MapReader>
+  // NOLINTEND
   // clang-format on
 
-  auto res = MapReader::Load(map_target.c_str());
+  auto map_doc = MapReader::Load(map_target.c_str());
+  std::printf("[Debug: %6s] Document result: { Code: %d, Msg: %s }\n",
+              "Mapper",
+              static_cast<uint8_t>(map_doc->Status()),
+              map_doc->GetResult().Description().c_str());
 #endif
 
   return EXIT_SUCCESS;
