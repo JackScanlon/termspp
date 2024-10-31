@@ -21,7 +21,7 @@ namespace common = termspp::common;
  *                                                          *
  ************************************************************/
 
-/// TODO(J): docs
+/// Attempt to derive the record type from the node's children
 auto tryGetRecordType(const pugi::xml_node *node) -> nonstd::expected<mesh::MeshType, mesh::MeshResult> {
   const auto types = mesh::kNodeTypes();
   const auto type  = types.find(node->name());
@@ -32,7 +32,7 @@ auto tryGetRecordType(const pugi::xml_node *node) -> nonstd::expected<mesh::Mesh
   return type->second;
 }
 
-/// TODO(J): docs
+/// Attempt to retrieve some MeSH node's top-level field(s)
 auto tryGetRecordFields(const mesh::MeshType &type,
                         const pugi::xml_node *node) -> nonstd::expected<mesh::MeshProps, mesh::MeshResult> {
   const auto fields = mesh::kNodeFields();
@@ -66,7 +66,7 @@ auto tryGetRecordFields(const mesh::MeshType &type,
   };
 }
 
-/// TODO(J): docs
+/// Attempt to derive the `DescriptorRecordSet` node's class
 auto tryGetDescriptorClass(const char *attr) -> nonstd::expected<mesh::MeshCategory, mesh::MeshResult> {
   auto status = mesh::MeshResult{mesh::MeshStatus::kEmptyNodeDataErr};
   if (attr == nullptr || attr[0] == '\0') {
@@ -91,7 +91,7 @@ auto tryGetDescriptorClass(const char *attr) -> nonstd::expected<mesh::MeshCateg
   return result;
 }
 
-/// TODO(J): docs
+/// Attempt to retrieve the `<Concept />` node's preference attribute
 auto tryGetConceptPreference(const char *attr) -> nonstd::expected<mesh::MeshCategory, mesh::MeshResult> {
   auto status = mesh::MeshResult{mesh::MeshStatus::kEmptyNodeDataErr};
   if (attr == nullptr) {
@@ -108,7 +108,7 @@ auto tryGetConceptPreference(const char *attr) -> nonstd::expected<mesh::MeshCat
   return nonstd::make_unexpected(status);
 }
 
-/// TODO(J): docs
+/// Attempt to retrieve the `<Term />` node's preference attribute
 auto tryGetTermAttributes(const pugi::xml_node *node) -> nonstd::expected<mesh::MeshTermAttr, mesh::MeshResult> {
   if (node == nullptr || !(*node)) {
     return nonstd::make_unexpected(mesh::MeshResult{mesh::MeshStatus::kNodeDoesNotExistErr});
@@ -222,10 +222,6 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> mesh::MeshResult {
       return res;
     }
   }
-
-  // for (const auto &[uid, rec] : records_) {
-  //   std::printf("[SAMPLE] UID: %s | Name: %s\n", uid, rec.buf + rec.uidLen);
-  // }
 
   return mesh::MeshResult{mesh::MeshStatus::kSuccessful};
 }

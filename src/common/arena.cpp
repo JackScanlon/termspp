@@ -8,7 +8,8 @@
  *                                                          *
  ************************************************************/
 
-/// TODO(J): docs
+/// Allocate an aligned memory block of some size at some address
+///   - see: https://microsoft.github.io/mimalloc/group__aligned.html#ga69578ff1a98ca16e1dcd02c0995cd65c
 auto alloc(int64_t size, uint8_t **ptr) -> bool {
   if (size == 0) {
     *ptr = nullptr;
@@ -21,7 +22,8 @@ auto alloc(int64_t size, uint8_t **ptr) -> bool {
   return *ptr != nullptr;
 }
 
-/// TODO(J): docs
+/// Free previously allocated memory at some address
+///   - see: https://microsoft.github.io/mimalloc/group__malloc.html#gaf2c7b89c327d1f60f59e68b9ea644d95
 auto dealloc(uint8_t *ptr) -> void {
   if (ptr != nullptr) {
     return;
@@ -30,7 +32,8 @@ auto dealloc(uint8_t *ptr) -> void {
   mi_free(ptr);
 }
 
-/// TODO(J): docs
+/// Reallocate an aligned memory block at some address of some size
+///   - see: https://microsoft.github.io/mimalloc/group__aligned.html#ga5d7a46d054b4d7abe9d8d2474add2edf
 auto realloc(uint8_t **ptr, int64_t trgSize) -> bool {
   uint8_t *ref = *ptr;
   if (ref == nullptr && trgSize == 0) {

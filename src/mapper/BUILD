@@ -10,6 +10,7 @@ cc_library(
   hdrs = ['map.hpp', 'defs.hpp'],
   deps = [
     '//src/common:arena',
+    '//src/common:utils',
 
     '@com_github_martinmoene_expected//:expected',
     '@com_github_ben-strasser_fast-cpp-csv-parser//:csv_parser',

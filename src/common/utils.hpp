@@ -7,6 +7,28 @@
 namespace termspp {
 namespace common {
 
+/// Combine hash - see @Boost ref
+constexpr const auto kFracGolden  = 0x9e3779b9;
+constexpr const auto kLHashOffset = 6;
+
+template <typename T, typename... Rest>
+inline auto hashCombine(std::size_t &seed, T const &val, Rest &&...rest) -> void {
+  auto hasher  = std::hash<T>{};
+  seed        ^= hasher(val) + kFracGolden + (seed << kLHashOffset) + (seed >> 2);
+  (hashCombine(seed, rest), ...);
+}
+
+// Hash `std::pair<T1, T2>` pairs
+struct PairHash {
+  template <class T1, class T2>
+  auto operator()(const std::pair<T1, T2> &pair) const->size_t {
+    size_t seed = 0;
+    hashCombine(seed, pair.first, pair.second);
+
+    return seed;
+  }
+};
+
 /// Hash fn to group char* keys into buckets for `std::unordered_map`
 struct CharHash {
 public:

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "termspp/common/arena.hpp"
+#include "termspp/common/utils.hpp"
 #include "termspp/mapper/defs.hpp"
 
 #include "fastcsv/csv.h"
@@ -12,6 +13,8 @@
 #include <sstream>
 #include <string_view>
 #include <tuple>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace termspp {
@@ -23,8 +26,9 @@ namespace mapper {
  *                                                          *
  ************************************************************/
 
-constexpr const size_t kMapRowAlignment    = 64U;
-constexpr const size_t kMapRecordAlignment = 32U;
+/// Mem. alignment
+constexpr const size_t kMapRowAlignment    = 16U;
+constexpr const size_t kMapRecordAlignment = 16U;
 
 /// Columns contained by a single row
 typedef std::vector<std::string_view> MapCols;
@@ -54,7 +58,7 @@ struct alignas(kMapRowAlignment) MapRow {
   MapStatus status;
 };
 
-/// Describes a finalised map item
+/// Describes a finalised map record
 struct alignas(kMapRecordAlignment) MapRecord {
   char    *buf;
   uint64_t bufLen;
@@ -154,7 +158,15 @@ struct ColumnSelect {
  *                                                          *
  ************************************************************/
 
-/// TODO(J): docs for Map document container
+/// Uid reference map type
+typedef std::pair<std::string, std::string>                                              MapKey;
+typedef std::unordered_map<MapKey, MapRecord, common::PairHash>                          MapTargets;
+typedef std::unordered_map<const char *, MapTargets, common::CharHash, common::CharComp> RecordMap;
+
+/// SCT<->MeSH Document
+///   - Maps SCT & MeSH codes defined by the following ref:
+///     https://www.ncbi.nlm.nih.gov/books/NBK9685/table/ch03.T.concept_names_and_sources_file_mr/
+///
 template <class DelimiterPolicy = ColumnDelimiter<>,
           class FilterPolicy    = NoRowFilter,
           class SelectorPolicy  = AllSelected>
@@ -179,26 +191,33 @@ public:
   MapDocument(MapDocument const &)                   = delete;
   auto operator=(MapDocument const &)->MapDocument & = delete;
 
-  /// TODO(J): docs
+  /// Retrieve a shared_ptr that references & shares the ownership of this cls
+  [[nodiscard]] auto GetRef() -> std::shared_ptr<MapDoc> {
+    return std::enable_shared_from_this<MapDoc>::shared_from_this();
+  }
+
+  /// Getter: test whether this document loaded successfully
   [[nodiscard]] auto Ok() const -> bool {
     return result_.Ok();
   }
 
-  /// TODO(J): docs
+  /// Getter: retrieve the status of this document
   [[nodiscard]] auto Status() const -> MapStatus {
     return result_.Status();
   }
 
-  /// TODO(J): docs
+  /// Getter: retrieve the `MapResult` of this document describing success or any assoc. errs
   [[nodiscard]] auto GetResult() const -> MapResult {
     return result_;
   }
 
+  /// Getter: get the document target
   [[nodiscard]] auto GetTarget() const -> std::string_view {
     return target_;
   }
 
 private:
+  /// Allocates a record to this instance's arena and packs it into a struct
   [[nodiscard]] auto allocRow(const MapCols &row, const uint64_t &size) -> nonstd::expected<MapRecord, MapResult> {
     uint8_t *ptr{nullptr};
     if (!allocator_->Allocate(static_cast<int64_t>(size), &ptr)) {
@@ -236,23 +255,14 @@ private:
     };
   }
 
-private:
-  std::string_view               target_;     // Document target resource
-  MapResult                      result_;     // Parsing result & document validity
-  std::vector<MapRecord>         records_;    // Document records
-  std::unique_ptr<common::Arena> allocator_;  // Arena allocator
-
-protected:
-  /// Map document constructor
-  explicit MapDocument(const char *filepath) {
+  /// Responsible for parsing the document from file & building a unique map across MeSH & SCT records
+  auto buildMapping(const char *filepath) -> void {
     if (!std::filesystem::exists(filepath)) {
       result_ = mapper::MapResult{MapStatus::kFileNotFoundErr};
       return;
     }
 
     auto reader = std::unique_ptr<io::LineReader>();
-    target_     = filepath;
-
     try {
       reader = std::make_unique<io::LineReader>(filepath);
     } catch (const std::exception &err) {
@@ -260,7 +270,9 @@ protected:
       return;
     }
 
+    target_    = filepath;
     allocator_ = common::Arena::Create(kArenaRegionSize);
+
     try {
       char *line{nullptr};
       while ((line = reader->next_line()) && line) {
@@ -275,18 +287,37 @@ protected:
         SelectorPolicy::Select(row);
 
         auto [cols, size, status] = row;
-        if (cols.size() < 1 || size < 1) {
+        if (cols.size() < 3 || size < 1) {
           continue;
         }
 
+        // Clip extents
+        auto cuid_value = std::string{cols.at(0).data(), cols.at(0).length()};  // CUID
+        auto src_value  = std::string{cols.at(1).data(), cols.at(1).length()};  // SAB
+        auto trg_value  = std::string{cols.at(2).data(), cols.at(2).length()};  // term/code
+
+        // Ensure unique
+        auto mapped      = records_.find(cuid_value.c_str());
+        auto has_mapping = mapped != records_.end();
+        auto map_key     = MapKey(src_value, trg_value);
+        if (has_mapping && mapped->second.find(map_key) != mapped->second.end()) {
+          continue;
+        }
+
+        // Alloc & record
         auto result = allocRow(cols, size);
         if (!result.has_value()) {
           result_ = result.error();
           return;
         }
 
-        auto [buf, bufLen, colLen] = result.value();
-        records_.emplace_back(buf, bufLen, colLen);
+        auto record = result.value();
+        if (has_mapping) {
+          mapped->second.emplace(map_key, record);
+        } else {
+          auto [targets, inserted] = records_.emplace(record.buf, MapTargets{});
+          targets->second.emplace(map_key, record);
+        }
       }
     } catch (const std::exception &err) {
       result_ = mapper::MapResult{mapper::MapStatus::kLineReaderErr, err.what()};
@@ -294,10 +325,18 @@ protected:
     }
 
     result_ = mapper::MapResult{mapper::MapStatus::kSuccessful};
+  }
 
-    // for (const auto &record : records_) {
-    //   std::printf("[SAMPLE] Record<Id: %s, Lang: %s>\n", record.buf, record.buf + std::strlen(record.buf) + 1);
-    // }
+private:
+  std::string_view               target_;     // Document target resource
+  MapResult                      result_;     // Parsing result & document validity
+  RecordMap                      records_;    // Map records
+  std::unique_ptr<common::Arena> allocator_;  // Arena allocator
+
+protected:
+  /// Map document constructor
+  explicit MapDocument(const char *filepath) {
+    buildMapping(filepath);
   }
 };
 

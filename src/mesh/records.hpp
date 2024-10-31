@@ -11,6 +11,9 @@ namespace mesh {
 
 namespace common = termspp::common;
 
+/// MeSH record alignment
+constexpr const size_t kMeshRecordAlignment{8U};
+
 /// Const. format str used by `mesh::MeshResult` to fmt its description
 constexpr const auto kMeshResultFormatStr = std::string_view("%s with msg: %s");
 
@@ -61,7 +64,7 @@ enum class MeshModifier : uint8_t {
 
 /// MeSH record
 ///   - i.e. output shape of the parsed data
-struct MeshRecord {
+struct alignas(kMeshRecordAlignment) MeshRecord {
   char        *buf;        // Name + UID buf
   const char  *parentUid;  // Buf containing this element's parent UID (if any)
   uint16_t     uidLen;     // Length of the UID string described by `buf` & the name offset
