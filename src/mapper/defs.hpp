@@ -1,86 +1,173 @@
 #pragma once
 
-#include "termspp/common/utils.hpp"
+#include "termspp/common/result.hpp"
+#include "termspp/mapper/constants.hpp"
 
-#include <cstdint>
+#include <cstring>
+#include <memory>
 #include <string>
-#include <utility>
+#include <vector>
 
 namespace termspp {
 namespace mapper {
 
-namespace common = termspp::common;
+/************************************************************
+ *                                                          *
+ *                           Data                           *
+ *                                                          *
+ ************************************************************/
 
-/// Const. format str used by `mesh::MapResult` to fmt its description
-constexpr const auto kMapResultFormatStr = std::string_view("%s with msg: %s");
+/// Columns contained by a single row
+typedef std::vector<std::string_view> MapCols;
 
-/// Enum describing the parsing / op status
-///   - returned as a member of the `MapResult` object
-enum class MapStatus : uint8_t {
-  kUnknownErr,       // Default err state describing an unknown / unexpected err
-  kFileNotFoundErr,  // File wasn't found when attempting to load the file
-  kFileInitErr,      // Failed to initialise line reader
-  kLineReaderErr,    // Failed to read line
-  kAllocationErr,    // Failed to allocate memory
-  kNoRowData,        // No row data was parsed for this row
-  kSuccessful,       // No error
+/// Describes a parsed map row
+///   - Used for structured binding of ColumnDelimiter policy
+struct alignas(kMapRowAlignment) MapRow {
+  MapCols        cols;
+  uint64_t       size;
+  common::Status status;
 };
 
-/// Op result descriptor
-///   - defines status, and assoc. message, describing whether an op succeeded
-typedef common::Result<MapStatus, MapStatus::kSuccessful> MapResultBase;
+/// Describes a finalised map record
+struct alignas(kMapRecordAlignment) MapRecord {
+  char *uidBuf;
+  char *srcBuf;
+  char *trgBuf;
+};
 
-struct MapResult final : public MapResultBase {
-  // Default constructor
-  MapResult() : MapResultBase(MapStatus::kUnknownErr) {};
+/// Predicate type for `FilterPolicy` policies
+typedef bool (*MapPredicate)(MapRow &);
 
-  /// Construct with a status
-  explicit MapResult(MapStatus status) : MapResultBase(status) {};
+/// Record handler for `BuilderPolicy` policies
+typedef bool (*MapBuilder)(const MapCols &, uint8_t *ptr, MapRecord &);
 
-  /// Construct with a status and attach an err message
-  MapResult(MapStatus status, std::string message) : MapResultBase(status, std::move(message)) {};
+/************************************************************
+ *                                                          *
+ *                         Helpers                          *
+ *                                                          *
+ ************************************************************/
+/// Filter columns by index
+template <typename Container, typename Iter>
+auto FilterColumnIndices(Container &container, uint64_t &size, Iter beg, Iter end) -> decltype(std::end(container)) {
+  size_t index{0};
+  size = 0;
 
-  /// Getter: resolve the description assoc. with the result's status
-  [[nodiscard]] auto Description() const -> std::string override {
-    auto result = std::string{};
-    switch (Status()) {
-    case MapStatus::kSuccessful:
-      result = "Success";
-      break;
-    case MapStatus::kFileNotFoundErr:
-      result = "Failed to load file";
-      break;
-    case MapStatus::kFileInitErr:
-      result = "Failed to initialise line reader";
-      break;
-    case MapStatus::kLineReaderErr:
-      result = "Failed to read line";
-      break;
-    case MapStatus::kAllocationErr:
-      result = "Failed to allocate memory";
-      break;
-    case MapStatus::kNoRowData:
-      result = "No data was parsed for this row";
-      break;
-    case MapStatus::kUnknownErr:
-    default:
-      result = "Unknown error occurred whilst processing Map document";
-      break;
-    }
+  return std::stable_partition(
+    std::begin(container), std::end(container), [&](typename Container::value_type const &val) -> bool {
+      if (std::find(beg, end, index++) == end) {
+        return false;
+      };
 
-    auto msg = Message();
-    if (!msg.empty()) {
-      auto size = std::snprintf(nullptr, 0, kMapResultFormatStr.data(), result.c_str(), msg.c_str());
-      if (size > 0) {
-        size++;
+      size += val.length() + 1;
+      return true;
+    });
+};
 
-        auto fmt = std::string(size, '0');
-        std::snprintf(fmt.data(), size, kMapResultFormatStr.data(), result.c_str(), msg.c_str());
-        return fmt;
+/************************************************************
+ *                                                          *
+ *                         Policies                         *
+ *                                                          *
+ ************************************************************/
+
+/// DelimiterPolicy: Parse columns from a row by some delimiter described by `Token`
+template <char Token = '|'>
+struct ColumnDelimiter {
+  static auto ParseLine(std::string_view input) -> MapRow {
+    auto data = MapCols{};
+    data.reserve(input.length() / 2);
+
+    uint64_t size{0};
+    size_t   length{0};
+
+    const auto *ptr = input.data();
+    const auto dlm  = std::unique_ptr<const char[]>(new char[1]{Token});
+    while (ptr) {
+      const auto *src = ptr;
+      const auto chr  = *src;
+      switch (chr) {
+      case '\n':
+        goto exit;
+        break;
+      default: {
+        ptr = std::strpbrk(ptr, dlm.get());
+        if (ptr != nullptr) {
+          length  = static_cast<size_t>(ptr - src);
+          size   += length + 1;
+
+          data.emplace_back(src, length);
+          ptr++;
+          break;
+        }
+
+        goto exit;
       }
+      };
     }
 
-    return result;
+  exit:
+    auto status = common::Status::kSuccessful;
+    if (size < 1 || data.size() < 1) {
+      status = common::Status::kNoRowData;
+    }
+
+    return {
+      .cols   = std::move(data),
+      .size   = size,
+      .status = status,
+    };
+  }
+};
+
+/// FilterPolicy: Accept all rows and don't filter
+struct NoRowFilter {
+  static auto Filter(MapRow & /*row*/) -> bool {
+    return false;
+  }
+};
+
+/// FilterPolicy: Filter rows by some predicate
+template <MapPredicate Predicate>
+struct RowFilter {
+  static auto Filter(MapRow &row) -> bool {
+    return Predicate(row);
+  }
+};
+
+/// FilterPolicy: Filter rows by some predicate with capture
+template <class L>
+auto LambdaFilter(L &&lambda) {
+  static L func = std::forward<L>(lambda);
+  return [](MapRow &row) -> bool {
+    return func(row);
+  };
+}
+
+/// SelectorPolicy: Return
+struct AllSelected {
+  static auto Select(MapRow & /*row*/) -> void {}
+};
+
+/// SelectorPolicy: Select columns by indices
+template <uint16_t... Args>
+struct ColumnSelect {
+  static auto Select(MapRow &row) -> void {
+    static const std::vector<uint16_t> kSelected{Args...};
+    row.cols.erase(FilterColumnIndices(row.cols, row.size, kSelected.begin(), kSelected.end()), row.cols.end());
+  }
+};
+
+/// BuilderPolicy: Default, throw err
+struct NoBuilder {
+  static auto Build(const MapCols & /*row*/, uint8_t * /*ptr*/, MapRecord & /*record*/) -> bool {
+    return false;
+  }
+};
+
+/// BuilderPolicy: Build Conso record
+template <MapBuilder Builder>
+struct RecordBuilder {
+  static auto Build(const MapCols &row, uint8_t *ptr, MapRecord &record) -> bool {
+    return Builder(row, ptr, record);
   }
 };
 

@@ -12,9 +12,7 @@ cc_binary(
   name = 'termspp',
   srcs = ['main.cpp'],
   deps = [
-    '//src/common:utils',
-    '//src/mesh:parser',
-    '//src/mapper:mapping',
+    '//src/builder:document',
     '//src:definitions',
   ],
   data = select({

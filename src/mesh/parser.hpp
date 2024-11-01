@@ -1,8 +1,9 @@
 #pragma once
 
 #include "termspp/common/arena.hpp"
+#include "termspp/common/result.hpp"
 #include "termspp/common/utils.hpp"
-#include "termspp/mesh/records.hpp"
+#include "termspp/mesh/defs.hpp"
 
 #include <memory>
 #include <string_view>
@@ -20,7 +21,7 @@ typedef std::unordered_map<const char *, MeshRecord, common::CharHash, common::C
 ///   - Responsible for parsing MeSH XML docs
 class MeshDocument final : public std::enable_shared_from_this<MeshDocument> {
   /// Arena allocator region size
-  static constexpr const size_t kArenaRegionSize{8192LL};
+  static constexpr const size_t kArenaRegionSize{4096LL};
 
   /// Reserve an `unordered_map` or size `root.children.length()*kReserveMulti`
   static constexpr const size_t kReserveMulti{2L};
@@ -46,26 +47,26 @@ public:
   [[nodiscard]] auto Ok() const -> bool;
 
   /// Getter: retrieve the status of this document
-  [[nodiscard]] auto Status() const -> MeshStatus;
+  [[nodiscard]] auto Status() const -> common::Status;
 
-  /// Getter: retrieve the `MeshResult` of this document describing success or any assoc. errs
-  [[nodiscard]] auto GetResult() const -> MeshResult;
+  /// Getter: retrieve the `Result` of this document describing success or any assoc. errs
+  [[nodiscard]] auto GetResult() const -> common::Result;
 
   /// Getter: get the document target
   [[nodiscard]] auto GetTarget() const -> std::string_view;
 
   /// Test whether a MeSH identifier exists within this document
-  [[nodiscard]] auto HasIdentifier(const char *ident) -> bool;
+  [[nodiscard]] auto HasIdentifier(const std::string &ident) -> bool;
 
 private:
   /// Loads the document from file
-  auto loadFile(const char *filepath) -> MeshResult;
+  auto loadFile(const char *filepath) -> common::Result;
 
   /// Tandem recursive function alongside `iterateChildren()` to parse records
-  auto parseRecords(const void *nodePtr, const char *parentUid = nullptr) -> MeshResult;
+  auto parseRecords(const void *nodePtr, const char *parentUid = nullptr) -> common::Result;
 
   /// Tandem recursive function alongside `parseRecords()` to parse records
-  auto iterateChildren(const void *nodePtr, const MeshType &type, const char *parentUid) -> MeshResult;
+  auto iterateChildren(const void *nodePtr, const MeshType &type, const char *parentUid) -> common::Result;
 
   /// Allocates a record to this instance's arena and packs it into a struct
   auto allocRecord(const char  *uid,
@@ -73,11 +74,10 @@ private:
                    const char  *parentUid,
                    MeshType     type,
                    MeshCategory cat = MeshCategory::kUnknown,
-                   MeshModifier mod = MeshModifier::kUnknown) -> MeshResult;
+                   MeshModifier mod = MeshModifier::kUnknown) -> common::Result;
 
 private:
-  std::string_view                        target_;     /// Document target resource
-  MeshResult                              result_;     /// Parsing result & document validity
+  common::Result                          result_;     /// Parsing result & document validity
   MeshRecords                             records_;    /// MeSH UID reference map
   std::unique_ptr<termspp::common::Arena> allocator_;  /// Arena allocator
 

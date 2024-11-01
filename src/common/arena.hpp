@@ -10,7 +10,7 @@ namespace common {
 
 /// Mem. alignment
 static constexpr const size_t  kRegionAlignment  = 8U;
-static constexpr const size_t  kArenaAlignment   = 8U;
+static constexpr const size_t  kArenaAlignment   = 64U;
 static constexpr const int64_t kDefaultArenaSize = 4096LL;
 
 /// Basic arena allocator to manage large contiguous pieces of memory

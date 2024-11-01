@@ -1,5 +1,4 @@
-#include "termspp/mapper/map.hpp"
-#include "termspp/mesh/parser.hpp"
+#include "termspp/builder/document.hpp"
 
 #include <cstdio>
 #include <cstdlib>
@@ -8,47 +7,41 @@
 #define STRINGIFY(x)       #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
-namespace mesh   = termspp::mesh;
-namespace mapper = termspp::mapper;
-
 auto main() -> int {
   // TODO(J):
   //  - [x] hnd err
   //  - [x] build base mesh doc
   //  - [x] build base sct-mesh map doc
-  //  - [ ] comp. maps against known mesh codes contained by ::MeshDocument
+  //  - [x] comp. maps against known mesh codes contained by ::MeshDocument
+  //  - [ ] refactor MeshDocument to utilise multimap to account for its multiple parent(s), i.e. more DAG less tree
   //  - [ ] build release file containing res
   //  - [ ] to pgx?
 
-  std::string map_target;  // SCT-MeSH (csv/rrf) resource target
-  std::string msh_target;  // MeSH XML resource target
+  auto map_target = std::string{};  // SCT-MeSH (csv/rrf) resource target
+  auto msh_target = std::string{};  // MeSH XML resource target
 
   // NOTE(J):
   //   - debug targets are defined by the `DBG_MSH_PATH` & `DBG_MAP_PATH`;
   //     these are temporary targets defined by compiler -D opt; will be parsed
   //     from argv at some point
   //
-#if defined(DBG_MSH_PATH)
-  msh_target = std::string_view{MACRO_STRINGIFY(DBG_MSH_PATH)};
-  std::printf("[Debug: %6s] Resource target: %s\n", "MeSH", msh_target.c_str());
-
-  auto msh_doc = mesh::MeshDocument::Load(msh_target.c_str());
-  std::printf("[Debug: %6s] Document result: { Code: %d, Msg: %s }\n",
-              "MeSH",
-              static_cast<uint8_t>(msh_doc->Status()),
-              msh_doc->GetResult().Description().c_str());
-#endif
+  // #if defined(DBG_MSH_PATH)
+  //   msh_target = std::string{MACRO_STRINGIFY(DBG_MSH_PATH)};
+  // #endif
 
 #if defined(DBG_MAP_PATH)
   map_target = std::string{MACRO_STRINGIFY(DBG_MAP_PATH)};
-  std::printf("[Debug: %6s] Resource target: %s\n", "Mapper", map_target.c_str());
-
-  auto map_doc = mapper::ConsoReader::Load(map_target.c_str());
-  std::printf("[Debug: %6s] Document result: { Code: %d, Msg: %s }\n",
-              "Mapper",
-              static_cast<uint8_t>(map_doc->Status()),
-              map_doc->GetResult().Description().c_str());
 #endif
+
+  auto doc = termspp::builder::Document({
+    .mapTarget  = map_target,
+    .meshTarget = msh_target,
+  });
+
+  std::printf("[Debug: %8s] Document result: { Code: %2d, Msg: %s }\n",
+              "Document",
+              static_cast<uint8_t>(doc.Status()),
+              doc.GetResult().Description().c_str());
 
   return EXIT_SUCCESS;
 }

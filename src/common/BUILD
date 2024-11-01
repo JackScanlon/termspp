@@ -24,6 +24,12 @@ cc_library(
 )
 
 cc_library(
+  name = 'result',
+  hdrs = ['result.hpp'],
+  include_prefix = 'termspp/common',
+)
+
+cc_library(
   name = 'arena',
   srcs = ['arena.cpp'],
   hdrs = ['arena.hpp'],

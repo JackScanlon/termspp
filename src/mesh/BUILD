@@ -8,11 +8,12 @@ exports_files(['LICENSE'])
 cc_library(
   name = 'parser',
   srcs = ['parser.cpp'],
-  hdrs = ['parser.hpp', 'constants.hpp', 'records.hpp', 'fields.hpp'],
+  hdrs = ['parser.hpp', 'constants.hpp', 'defs.hpp'],
   deps = [
     '//src/common:arena',
     '//src/common:utils',
     '//src/common:strings',
+    '//src/common:result',
 
     '@pugixml//:pugixml',
     '@com_github_martinmoene_expected//:expected',

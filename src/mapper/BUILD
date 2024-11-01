@@ -6,11 +6,11 @@ licenses(['notice'])
 exports_files(['LICENSE'])
 
 cc_library(
-  name = 'mapping',
-  hdrs = ['map.hpp', 'defs.hpp'],
+  name = 'map',
+  hdrs = ['map.hpp', 'defs.hpp', 'constants.hpp'],
   deps = [
     '//src/common:arena',
-    '//src/common:utils',
+    '//src/common:result',
 
     '@com_github_martinmoene_expected//:expected',
     '@com_github_ben-strasser_fast-cpp-csv-parser//:csv_parser',
