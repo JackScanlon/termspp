@@ -7,8 +7,8 @@ exports_files(['LICENSE'])
 
 cc_library(
   name = 'document',
-  srcs = ['document.cpp'],
-  hdrs = ['document.hpp'],
+  srcs = ['document.cpp', 'policies.cpp'],
+  hdrs = ['document.hpp', 'policies.hpp'],
   deps = [
     '//src/mapper:map',
     '//src/mesh:parser',

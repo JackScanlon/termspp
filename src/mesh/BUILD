@@ -11,7 +11,6 @@ cc_library(
   hdrs = ['parser.hpp', 'constants.hpp', 'defs.hpp'],
   deps = [
     '//src/common:arena',
-    '//src/common:utils',
     '//src/common:strings',
     '//src/common:result',
 

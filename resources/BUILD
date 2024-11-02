@@ -17,3 +17,11 @@ genrule(
   outs = ['resources.xml'],
   cmd = 'cp -r $(SRCS) $(OUTS)'
 )
+
+# Basic rrf resource for debugging
+genrule(
+  name = 'rrf_debug',
+  srcs = ['basic.RRF'],
+  outs = ['resources.xml'],
+  cmd = 'cp -r $(SRCS) $(OUTS)'
+)

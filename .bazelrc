@@ -18,5 +18,5 @@ build:dbg --enable_runfiles --experimental_inprocess_symlink_creation --strip=ne
 
 # release
 build:opt -c opt
-build:opt --copt="-O3"
+build:opt --copt="-Ofast"
 build:opt --strip=always

@@ -4,7 +4,9 @@
 #include "termspp/mapper/constants.hpp"
 
 #include <cstring>
+#include <map>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -13,7 +15,7 @@ namespace mapper {
 
 /************************************************************
  *                                                          *
- *                           Data                           *
+ *                         Records                          *
  *                                                          *
  ************************************************************/
 
@@ -33,13 +35,108 @@ struct alignas(kMapRecordAlignment) MapRecord {
   char *uidBuf;
   char *srcBuf;
   char *trgBuf;
+
+  friend auto operator<<(std::ostream &stream, const MapRecord &obj)->std::ostream & {
+    return stream << obj.uidBuf << "|"    //
+                  << obj.srcBuf << "|"    //
+                  << obj.trgBuf << "\n";  //
+  }
 };
+
+/// Uid reference map type
+typedef std::tuple<std::string_view, std::string_view, std::string_view> MapKey;
+
+/// Lookup by individual key components
+struct RecordLookup {
+  std::string_view uid;
+  std::string_view src;
+  std::string_view trg;
+};
+
+/// Comparator for record keys
+struct RecordComp {
+  using is_transparent = bool;
+
+  auto operator()(MapKey const &elem0, MapKey const &elem1) const->bool {
+    auto comp0 = std::string(std::get<0>(elem0));
+    auto comp1 = std::string(std::get<0>(elem1));
+
+    comp0 += std::get<1>(elem0);
+    comp1 += std::get<1>(elem1);
+
+    return comp0.compare(comp1) < 0;
+  }
+
+  auto operator()(MapKey const &elem, const RecordLookup &lkup) const->bool {
+    auto comp0 = std::string{};
+    auto comp1 = std::string{};
+
+    if (!lkup.uid.empty()) {
+      comp0 += std::get<0>(elem);
+      comp1 += lkup.uid;
+    }
+
+    if (!lkup.src.empty()) {
+      comp0 += std::get<1>(elem);
+      comp1 += lkup.src;
+    }
+
+    if (!lkup.trg.empty()) {
+      comp0 += std::get<2>(elem);
+      comp1 += lkup.trg;
+    }
+
+    return comp0.compare(comp1) < 0;
+  }
+
+  auto operator()(const RecordLookup &lkup, MapKey const &elem) const->bool {
+    auto comp0 = std::string{};
+    auto comp1 = std::string{};
+
+    if (!lkup.uid.empty()) {
+      comp0 += std::get<0>(elem);
+      comp1 += lkup.uid;
+    }
+
+    if (!lkup.src.empty()) {
+      comp0 += std::get<1>(elem);
+      comp1 += lkup.src;
+    }
+
+    if (!lkup.trg.empty()) {
+      comp0 += std::get<2>(elem);
+      comp1 += lkup.trg;
+    }
+
+    return comp1.compare(comp0) < 0;
+  }
+
+  auto operator()(MapKey const &elem, const std::string_view &lkup) const->bool {
+    return std::get<0>(elem).compare(lkup) < 0;
+  }
+
+  auto operator()(const std::string_view &lkup, MapKey const &elem) const->bool {
+    return lkup.compare(std::get<0>(elem)) < 0;
+  }
+};
+
+/// Multimap of records, keyed to components
+typedef std::multimap<MapKey, MapRecord, RecordComp> RecordMap;
+
+/************************************************************
+ *                                                          *
+ *                        Predicate                         *
+ *                                                          *
+ ************************************************************/
 
 /// Predicate type for `FilterPolicy` policies
 typedef bool (*MapPredicate)(MapRow &);
 
 /// Record handler for `BuilderPolicy` policies
-typedef bool (*MapBuilder)(const MapCols &, uint8_t *ptr, MapRecord &);
+typedef bool (*RowBuilder)(const MapCols &, uint8_t *, MapRecord &);
+
+/// Record handler for `MapPolicy` policies
+typedef bool (*MapTester)(const MapRow &, const RecordMap &);
 
 /************************************************************
  *                                                          *
@@ -156,18 +253,33 @@ struct ColumnSelect {
   }
 };
 
+/// MapPolicy: map all rows regardless
+struct MapAll {
+  static auto ShouldMap(const MapRow & /*row*/, const RecordMap & /*map*/) -> bool {
+    return true;
+  }
+};
+
+/// MapPolicy: lambda to test uniqueness/some other prop after selection against existing records
+template <MapTester Test>
+struct MapSelector {
+  static auto ShouldMap(const MapRow &row, const RecordMap &map) -> bool {
+    return Test(row, map);
+  }
+};
+
 /// BuilderPolicy: Default, throw err
 struct NoBuilder {
-  static auto Build(const MapCols & /*row*/, uint8_t * /*ptr*/, MapRecord & /*record*/) -> bool {
+  static auto Build(const MapCols & /*cols*/, uint8_t * /*ptr*/, MapRecord & /*record*/) -> bool {
     return false;
   }
 };
 
 /// BuilderPolicy: Build Conso record
-template <MapBuilder Builder>
+template <RowBuilder Builder>
 struct RecordBuilder {
-  static auto Build(const MapCols &row, uint8_t *ptr, MapRecord &record) -> bool {
-    return Builder(row, ptr, record);
+  static auto Build(const MapCols &cols, uint8_t *ptr, MapRecord &record) -> bool {
+    return Builder(cols, ptr, record);
   }
 };
 

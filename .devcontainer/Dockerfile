@@ -12,7 +12,7 @@ ARG BAZELISK_VERSION=v1.22.1
 RUN \
   apt-get update && \
     apt-get -q -y install --no-install-recommends \
-    locales lsb-release software-properties-common \
+    time locales lsb-release software-properties-common \
     python python3 python3-pip \
     gnupg wget unzip tar gzip zip curl bash patch \
     libtinfo5 libncurses5 libncurses5-dev libncursesw5-dev
@@ -39,6 +39,7 @@ RUN \
   update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100 && \
   update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
 
+
 # Update tz + lang
 RUN \
   ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && \
@@ -48,6 +49,7 @@ RUN \
 RUN echo locales locales/default_environment_locale select "en_GB.UTF-8" | debconf-set-selections
 RUN echo locales locales/locales_to_be_generated select "en_GB.UTF-8 UTF-8" | debconf-set-selections
 
+# Cleanup
 RUN \
   apt-get autoremove -y && \
   apt-get clean autoclean && \

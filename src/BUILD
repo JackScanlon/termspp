@@ -39,6 +39,13 @@ define_config(
     ':DBG_MSH_PATH',
     ':DBG_MAP_PATH',
   ],
+  # flags = select({
+  #   '//:debug_build': [
+  #     ':DBG_MSH_PATH',
+  #     ':DBG_MAP_PATH',
+  #   ],
+  #   '//conditions:default': []
+  # }),
   defines = select({
     '//:debug_build': [
       'DEBUG=1'

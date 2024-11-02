@@ -2,29 +2,26 @@
 
 #include "termspp/common/arena.hpp"
 #include "termspp/common/result.hpp"
-#include "termspp/common/utils.hpp"
 #include "termspp/mesh/defs.hpp"
 
+#include <map>
 #include <memory>
 #include <string_view>
-#include <unordered_map>
 
 namespace termspp {
 namespace mesh {
 
-namespace common = termspp::common;
-
 /// Uid reference map type
-typedef std::unordered_map<const char *, MeshRecord, common::CharHash, common::CharComp> MeshRecords;
+typedef std::multimap<std::string_view, MeshRecord> MeshRecords;
+
+// /// Uid reference map type
+// typedef std::unordered_map<const char *, MeshRecord, common::CharHash, common::CharComp> MeshRecords;
 
 /// MeSH document container
 ///   - Responsible for parsing MeSH XML docs
 class MeshDocument final : public std::enable_shared_from_this<MeshDocument> {
   /// Arena allocator region size
   static constexpr const size_t kArenaRegionSize{4096LL};
-
-  /// Reserve an `unordered_map` or size `root.children.length()*kReserveMulti`
-  static constexpr const size_t kReserveMulti{2L};
 
 public:
   /// Creates a new MeSH document instance by attemting to load
@@ -55,8 +52,11 @@ public:
   /// Getter: get the document target
   [[nodiscard]] auto GetTarget() const -> std::string_view;
 
+  /// Getter: Get records contained by this instance
+  [[nodiscard]] auto GetRecords() -> MeshRecords &;
+
   /// Test whether a MeSH identifier exists within this document
-  [[nodiscard]] auto HasIdentifier(const std::string &ident) -> bool;
+  [[nodiscard]] auto HasIdentifier(std::string_view ident) -> bool;
 
 private:
   /// Loads the document from file
@@ -69,7 +69,8 @@ private:
   auto iterateChildren(const void *nodePtr, const MeshType &type, const char *parentUid) -> common::Result;
 
   /// Allocates a record to this instance's arena and packs it into a struct
-  auto allocRecord(const char  *uid,
+  auto allocRecord(MeshRecord  &out,
+                   const char  *uid,
                    const char  *name,
                    const char  *parentUid,
                    MeshType     type,

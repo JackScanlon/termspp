@@ -18,5 +18,9 @@ constexpr const size_t kConsoSuppressColIndex = 16U;  /// Concept suppression st
 constexpr const size_t kMapRowAlignment    = 32U;
 constexpr const size_t kMapRecordAlignment = 16U;
 
+/// Source abbreviation name(s)
+constexpr const char *const kMeshSab   = "MSH";
+constexpr const char *const kSnomedSab = "SNOMED";
+
 }  // namespace mapper
 }  // namespace termspp

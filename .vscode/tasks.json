@@ -1,7 +1,7 @@
 {
 	"version": "2.0.0",
 	"tasks": [
-    // Resolve compile_commands.json
+    // Resolve `compile_commands.json` target
 		{
 			"label": "Bazel: Refresh compile commands",
 			"command": "bazel",
@@ -11,12 +11,15 @@
       "options": {
         "cwd": "${workspaceFolder}"
       },
-      "dependsOn": ["Bazel: Build debug"],
+      "presentation": {
+        "reveal": "silent"
+      },
+      "dependsOn": ["Bazel: Build Debug"],
       "problemMatcher": []
 		},
-    // Build with debug symbols
+    // Build with debug symbols via Bazel
 		{
-      "label": "Bazel: Build debug",
+      "label": "Bazel: Build Debug",
       "command": "bazel",
       "args": [
         "build", "//src:${workspaceFolderBasename}", "-c", "dbg"
@@ -25,6 +28,52 @@
         "cwd": "${workspaceFolder}"
       },
       "problemMatcher": []
-		}
+		},
+    // Measure time & resource usage of release build after building
+    {
+      "label": "Bazel: Build & Examine Release",
+      "command": "/usr/bin/time",
+      "args": [
+        "--verbose", "./bazel-out/k8-opt/bin/src/${workspaceFolderBasename}"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "dependsOn": ["Bazel: Build Release"],
+      "problemMatcher": []
+    },
+    // Build release via Bazel
+    {
+      "label": "Bazel: Build Release",
+      "type": "shell",
+      "command": "bazel",
+      "args": [
+        "build", "//src:${workspaceFolderBasename}", "-c", "opt"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": {
+        "owner": "cpp",
+        "fileLocation": ["relative", "${workspaceFolder}"],
+        "source": "bazel",
+        "pattern": {
+          "regexp": "^(.*):(\\d+):(\\d+):\\s+(warning|error):\\s+(.*)$",
+          "file": 1,
+          "line": 2,
+          "column": 3,
+          "severity": 4,
+          "message": 5
+        }
+      }
+    }
   ]
 }

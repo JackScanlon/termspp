@@ -7,8 +7,6 @@
 namespace termspp {
 namespace builder {
 
-namespace common = termspp::common;
-
 class Document final {
 private:
   struct Options {
@@ -43,6 +41,7 @@ public:
   [[nodiscard]] auto GetMeshTarget() const -> std::string_view;
 
 private:
+  /// TODO(J): docs
   auto generate() -> common::Result;
 
 private:

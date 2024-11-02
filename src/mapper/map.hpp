@@ -7,7 +7,6 @@
 #include "nonstd/expected.hpp"
 
 #include <filesystem>
-#include <map>
 #include <string_view>
 #include <tuple>
 #include <utility>
@@ -15,61 +14,11 @@
 namespace termspp {
 namespace mapper {
 
-namespace common = termspp::common;
-
 /************************************************************
  *                                                          *
  *                       MapDocument                        *
  *                                                          *
  ************************************************************/
-
-/// Uid reference map type
-typedef std::tuple<const char *, const char *, const char *> MapKey;
-
-/// Lookup by individual key components
-struct RecordLookup {
-  const char *uid;
-  const char *src;
-  const char *trg;
-};
-
-/// Comparator for record keys
-struct RecordComp {
-  using is_transparent = bool;
-
-  auto operator()(MapKey const &elem0, MapKey const &elem1) const->bool {
-    // clang-format off
-    // NOLINTBEGIN
-    return (std::strcmp(std::get<0>(elem0), std::get<0>(elem1))
-          + std::strcmp(std::get<1>(elem0), std::get<1>(elem1))
-          + std::strcmp(std::get<2>(elem0), std::get<2>(elem1))) < 0;
-    // NOLINTEND
-    // clang-format on
-  }
-
-  auto operator()(MapKey const &elem, const RecordLookup &lkup) const->bool {
-    // clang-format off
-    // NOLINTBEGIN
-    return ((lkup.uid != nullptr ? std::strcmp(std::get<0>(elem), lkup.uid) : 0)
-          + (lkup.src != nullptr ? std::strcmp(std::get<1>(elem), lkup.src) : 0)
-          + (lkup.trg != nullptr ? std::strcmp(std::get<2>(elem), lkup.trg) : 0)) < 0;
-    // NOLINTEND
-    // clang-format on
-  }
-
-  auto operator()(const RecordLookup &lkup, MapKey const &elem) const->bool {
-    // clang-format off
-    // NOLINTBEGIN
-    return ((lkup.uid != nullptr ? std::strcmp(lkup.uid, std::get<0>(elem)) : 0)
-          + (lkup.src != nullptr ? std::strcmp(lkup.src, std::get<1>(elem)) : 0)
-          + (lkup.trg != nullptr ? std::strcmp(lkup.trg, std::get<2>(elem)) : 0)) < 0;
-    // NOLINTEND
-    // clang-format on
-  }
-};
-
-/// Multimap of records, keyed to components
-typedef std::multimap<MapKey, MapRecord, RecordComp> RecordMap;
 
 /// SCT<->MeSH Document
 ///   - Maps SCT & MeSH codes described in the following ref:
@@ -85,15 +34,20 @@ typedef std::multimap<MapKey, MapRecord, RecordComp> RecordMap;
 template <class DelimiterPolicy = ColumnDelimiter<>,
           class FilterPolicy    = NoRowFilter,
           class SelectorPolicy  = AllSelected,
+          class MapPolicy       = MapAll,
           class BuilderPolicy   = NoBuilder>
-class MapDocument final
-    : public std::enable_shared_from_this<MapDocument<DelimiterPolicy, FilterPolicy, SelectorPolicy, BuilderPolicy>> {
+class MapDocument final                                                  //
+    : public std::enable_shared_from_this<MapDocument<DelimiterPolicy,   //
+                                                      FilterPolicy,      //
+                                                      SelectorPolicy,    //
+                                                      MapPolicy,         //
+                                                      BuilderPolicy>> {  //
 
   /// Arena allocator region size
   static constexpr const size_t kArenaRegionSize{4096LL};
 
   /// Policy typedef
-  using MapDoc = MapDocument<DelimiterPolicy, FilterPolicy, SelectorPolicy, BuilderPolicy>;
+  using MapDoc = MapDocument<DelimiterPolicy, FilterPolicy, SelectorPolicy, MapPolicy, BuilderPolicy>;
 
 public:
   /// Creates a new Map document instance
@@ -127,9 +81,106 @@ public:
     return result_;
   }
 
+  /// Getter: Get records contained by this instance
+  [[nodiscard]] auto GetRecords() -> RecordMap & {
+    return records_;
+  }
+
 private:
+  /// Builds a unique map across MeSH & SCT xrefs from file
+  auto buildMapping(const char *filepath) -> void {
+    auto result = parseFile(filepath);
+    if (!result.Ok()) {
+      result_ = result;
+      return;
+    }
+
+    auto rec_iter = records_.begin();
+    while (rec_iter != records_.end()) {
+      auto record  = rec_iter->second;
+      auto *source = record.srcBuf;
+
+      const auto *sibling = std::strncmp(source, kMeshSab, std::strlen(kMeshSab)) == 0  //
+                              ? kSnomedSab                                              //
+                              : kMeshSab;                                               //
+
+      auto clen  = std::strlen(sibling);
+      auto range = records_.equal_range(std::string_view{record.uidBuf});
+
+      // Find records with valid xrefs
+      auto has_sibling = std::any_of(range.first, range.second, [sibling, clen](const auto &rec) {
+        return std::strncmp(rec.second.srcBuf, sibling, clen) == 0;
+      });
+
+      // Erase key-value pairs in which no mapping was made between a SNOMED + MeSH code
+      if (!has_sibling) {
+        rec_iter = records_.erase(range.first, range.second);
+        continue;
+      }
+
+      // Advance to next key
+      rec_iter = range.second;
+    }
+
+    result_ = result;
+  }
+
+  /// Responsible for parsing the document from file according to the given policies
+  [[nodiscard]] auto parseFile(const char *filepath) -> common::Result {
+    if (!std::filesystem::exists(filepath)) {
+      return common::Result{common::Status::kFileNotFoundErr};
+    }
+
+    auto reader = std::unique_ptr<io::LineReader>();
+    allocator_  = common::Arena::Create(kArenaRegionSize);
+    try {
+      reader = std::make_unique<io::LineReader>(filepath);
+    } catch (const std::exception &err) {
+      return common::Result{common::Status::kFileInitErr, err.what()};
+    }
+
+    try {
+      char *line{nullptr};
+      while ((line = reader->next_line()) && line) {
+        // Parse col(s) per the given policy
+        auto row = DelimiterPolicy::ParseLine(line);
+        if (row.status != common::Status::kSuccessful) {
+          continue;
+        }
+
+        // Filter row by predicate
+        if (FilterPolicy::Filter(row)) {
+          continue;
+        }
+
+        // Select column(s) by func
+        SelectorPolicy::Select(row);
+
+        // Ensure mappable e.g. uniqueness of column(s) by predicate
+        if (row.status != common::Status::kSuccessful || !MapPolicy::ShouldMap(row, records_)) {
+          continue;
+        }
+
+        // Alloc & record
+        auto [cols, size, status] = row;
+        auto result               = allocRow(row.cols, row.size);
+        if (!result.has_value()) {
+          return result.error();
+        }
+
+        auto record = result.value();
+        records_.emplace(MapKey{record.uidBuf, record.srcBuf, record.trgBuf}, record);
+      }
+    } catch (const std::exception &err) {
+      return common::Result{common::Status::kLineReaderErr, err.what()};
+    }
+
+    return common::Result{common::Status::kSuccessful};
+  }
+
   /// Allocates a record to this instance's arena and packs it into a struct
   [[nodiscard]] auto allocRow(const MapCols &row, const uint64_t &size) -> nonstd::expected<MapRecord, common::Result> {
+    // Alloc record size
     uint8_t *ptr{nullptr};
     if (!allocator_->Allocate(static_cast<int64_t>(size), &ptr)) {
       auto out = std::ostringstream{};
@@ -148,75 +199,13 @@ private:
       return nonstd::make_unexpected(common::Result{common::Status::kAllocationErr, out.str()});
     }
 
+    // Build record by some func
     auto result = MapRecord{nullptr, nullptr, nullptr};
     if (!BuilderPolicy::Build(row, ptr, result)) {
       return nonstd::make_unexpected(common::Result{common::Status::kPolicyErr, "failed to build record"});
     }
 
     return result;
-  }
-
-  /// Responsible for parsing the document from file & building a unique map across MeSH & SCT records
-  auto buildMapping(const char *filepath) -> void {
-    if (!std::filesystem::exists(filepath)) {
-      result_ = common::Result{common::Status::kFileNotFoundErr};
-      return;
-    }
-
-    auto reader = std::unique_ptr<io::LineReader>();
-    allocator_  = common::Arena::Create(kArenaRegionSize);
-    try {
-      reader = std::make_unique<io::LineReader>(filepath);
-    } catch (const std::exception &err) {
-      result_ = common::Result{common::Status::kFileInitErr, err.what()};
-      return;
-    }
-
-    try {
-      char *line{nullptr};
-      while ((line = reader->next_line()) && line) {
-        auto row = DelimiterPolicy::ParseLine(line);
-        if (row.status != common::Status::kSuccessful) {
-          continue;
-        }
-
-        if (FilterPolicy::Filter(row)) {
-          continue;
-        }
-
-        SelectorPolicy::Select(row);
-
-        auto [cols, size, status] = row;
-        if (cols.size() < 3 || size < 1) {
-          continue;
-        }
-
-        // Clip extents since sv isn't null term'd
-        auto uid = std::string{cols.at(0).data(), cols.at(0).length()};  // CUID
-        auto src = std::string{cols.at(1).data(), cols.at(1).length()};  // SAB
-        auto trg = std::string{cols.at(2).data(), cols.at(2).length()};  // CODE/TERM
-
-        // Ensure unique
-        if (records_.find(RecordLookup{uid.c_str(), src.c_str(), trg.c_str()}) != records_.end()) {
-          continue;
-        }
-
-        // Alloc & record
-        auto result = allocRow(cols, size);
-        if (!result.has_value()) {
-          result_ = result.error();
-          return;
-        }
-
-        auto record = result.value();
-        records_.emplace(MapKey{record.uidBuf, record.srcBuf, record.trgBuf}, record);
-      }
-    } catch (const std::exception &err) {
-      result_ = common::Result{common::Status::kLineReaderErr, err.what()};
-      return;
-    }
-
-    result_ = common::Result{common::Status::kSuccessful};
   }
 
 private:

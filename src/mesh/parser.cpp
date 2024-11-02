@@ -11,8 +11,8 @@
 #include <cstring>
 #include <filesystem>
 
-namespace mesh   = termspp::mesh;
-namespace common = termspp::common;
+namespace mesh   = ::termspp::mesh;
+namespace common = ::termspp::common;
 
 /************************************************************
  *                                                          *
@@ -183,12 +183,16 @@ auto mesh::MeshDocument::GetResult() const -> common::Result {
   return result_;
 }
 
-auto mesh::MeshDocument::HasIdentifier(const std::string &ident) -> bool {
+auto mesh::MeshDocument::GetRecords() -> mesh::MeshRecords & {
+  return records_;
+}
+
+auto mesh::MeshDocument::HasIdentifier(std::string_view ident) -> bool {
   if (!result_.Ok()) {
     return false;
   }
 
-  return records_.find(ident.c_str()) != records_.end();
+  return records_.find(ident) != records_.end();
 }
 
 auto mesh::MeshDocument::loadFile(const char *filepath) -> common::Result {
@@ -208,8 +212,6 @@ auto mesh::MeshDocument::loadFile(const char *filepath) -> common::Result {
   }
 
   auto children = root.children();
-  records_.reserve(std::distance(children.begin(), children.end()) * kReserveMulti);
-
   for (const auto &node : children) {
     if (std::strcmp(node.name(), mesh::kRecordNode) != 0) {
       continue;
@@ -289,13 +291,14 @@ auto mesh::MeshDocument::parseRecords(const void *nodePtr, const char *parentUid
     return common::Result{common::Status::kUnknownNodeTypeErr};
   };
 
-  auto res = allocRecord(uid, name, parentUid, type, cat, mod);
+  auto rec = mesh::MeshRecord{};
+  auto res = allocRecord(rec, uid, name, parentUid, type, cat, mod);
   if (!res) {
     return res;
   }
 
   if (type == mesh::MeshType::kDescriptorRecord || type == mesh::MeshType::kConcept) {
-    res = iterateChildren(nodePtr, type, uid);
+    res = iterateChildren(nodePtr, type, rec.buf);
     if (!res) {
       return res;
     }
@@ -373,31 +376,30 @@ auto mesh::MeshDocument::iterateChildren(const void           *nodePtr,
   return result;
 }
 
-auto mesh::MeshDocument::allocRecord(const char        *uid,
+auto mesh::MeshDocument::allocRecord(mesh::MeshRecord  &out,
+                                     const char        *uid,
                                      const char        *name,
                                      const char        *parentUid,
                                      mesh::MeshType     type,
-                                     mesh::MeshCategory cat, /*= mesh::MeshCategory::kUnknown*/
+                                     mesh::MeshCategory cat /*= mesh::MeshCategory::kUnknown*/,
                                      mesh::MeshModifier mod /*= mesh::MeshModifier::kUnknown*/) -> common::Result {
-  auto record = mesh::MeshRecord{
-    .buf       = nullptr,
-    .parentUid = parentUid,
-    .uidLen    = static_cast<uint16_t>(std::strlen(uid) + 1),
-    .nameLen   = static_cast<uint16_t>(std::strlen(name) + 1),
-    .type      = type,
-    .category  = cat,
-    .modifier  = mod,
-  };
+  out.buf       = nullptr;
+  out.parentUid = parentUid;
+  out.uidLen    = static_cast<uint16_t>(std::strlen(uid));
+  out.nameLen   = static_cast<uint16_t>(std::strlen(name));
+  out.type      = type;
+  out.category  = cat;
+  out.modifier  = mod;
 
   uint8_t *ptr{nullptr};
-  if (!allocator_->Allocate(static_cast<int64_t>(record.uidLen + record.nameLen), &ptr)) {
+  if (!allocator_->Allocate(static_cast<int64_t>(out.uidLen + out.nameLen + 2), &ptr)) {
     return common::Result{common::Status::kAllocationErr};
   }
 
-  std::memcpy(ptr, uid, record.uidLen);
-  std::memcpy(ptr + record.uidLen, name, record.nameLen);
+  std::memcpy(ptr, uid, out.uidLen + 1);
+  std::memcpy(ptr + out.uidLen + 1, name, out.nameLen + 1);
 
-  record.buf = reinterpret_cast<char *>(ptr);
-  records_.emplace(record.buf, record);
+  out.buf = reinterpret_cast<char *>(ptr);
+  records_.emplace(out.buf, out);
   return common::Result{common::Status::kSuccessful};
 }

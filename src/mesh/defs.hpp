@@ -2,12 +2,27 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
+#include <ostream>
 #include <string_view>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
 
 namespace termspp {
 namespace mesh {
+
+/// Enum->Value type
+template <typename T>
+auto ToInteger(T const value) -> typename std::underlying_type<T>::type {
+  return static_cast<typename std::underlying_type<T>::type>(value);
+}
+
+template <typename T>
+auto ToString(T &value) ->
+  typename std::enable_if<!std::is_constructible<std::string, T>::value && std::is_enum<T>::value, std::string>::type {
+  return std::to_string(ToInteger(std::forward<T>(value)));
+}
 
 /// MeSH record alignment
 constexpr const size_t kMeshRecordAlignment{8U};
@@ -60,13 +75,29 @@ enum class MeshModifier : uint8_t {
 /// MeSH record
 ///   - i.e. output shape of the parsed data
 struct alignas(kMeshRecordAlignment) MeshRecord {
-  char        *buf;        // Name + UID buf
+  char        *buf;        // UID + name buf (separated by null term)
   const char  *parentUid;  // Buf containing this element's parent UID (if any)
   uint16_t     uidLen;     // Length of the UID string described by `buf` & the name offset
   uint16_t     nameLen;    // Length the name string described by `buf`
   MeshType     type;       // Mapped MeSH element type from its corresponding XML node
   MeshCategory category;   // MeSH category/subclass derived from the XML node
   MeshModifier modifier;   // Any assoc. modifier(s) assoc. with this element derived from its attributes
+
+  friend auto operator<<(std::ostream &stream, const MeshRecord &obj)->std::ostream & {
+    // clang-format off
+    auto *name = obj.buf + obj.uidLen + 1;
+    auto puid = obj.parentUid != nullptr
+        ? std::string_view{obj.parentUid, std::strlen(obj.parentUid)}
+        : std::string_view{};
+
+    return stream << std::string_view{obj.buf, obj.uidLen}  << "|"   //
+                  << std::string_view{name, obj.nameLen}    << "|"   //
+                  << puid                                   << "|"   //
+                  << ToString(obj.type)                     << "|"   //
+                  << ToString(obj.category)                 << "|"   //
+                  << ToString(obj.modifier)                 << "\n"; //
+    // clang-format on
+  }
 };
 
 /// Describes how to parse MeSH XML node field(s)
