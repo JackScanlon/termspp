@@ -8,5 +8,8 @@ compile_commands.json
 bazel-*
 external
 
+# Ignore checksum.sh output
+*.checksum
+
 # Datasets
 **/.data/

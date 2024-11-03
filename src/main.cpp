@@ -39,13 +39,14 @@ auto main() -> int {
   // MAYBE(J):
   //  - compress using libarchive for release?
   //  - push to pgx?
+  //  - buffer docs
   //
 
   auto msh_target = std::string{MACRO_STRINGIFY(DBG_MSH_PATH)};  // MeSH XML resource target
   auto map_target = std::string{MACRO_STRINGIFY(DBG_MAP_PATH)};  // SCT-MeSH (csv/rrf) resource target
 
   auto doc = builder::Document({
-    .mapTarget  = map_target,
+    .sctTarget  = map_target,
     .meshTarget = msh_target,
   });
 

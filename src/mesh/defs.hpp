@@ -79,7 +79,7 @@ struct alignas(kMeshRecordAlignment) MeshRecord {
   const char  *parentUid;  // Buf containing this element's parent UID (if any)
   uint16_t     uidLen;     // Length of the UID string described by `buf` & the name offset
   uint16_t     nameLen;    // Length the name string described by `buf`
-  MeshType     type;       // Mapped MeSH element type from its corresponding XML node
+  MeshType     type;       // Sctped MeSH element type from its corresponding XML node
   MeshCategory category;   // MeSH category/subclass derived from the XML node
   MeshModifier modifier;   // Any assoc. modifier(s) assoc. with this element derived from its attributes
 
@@ -133,7 +133,7 @@ static const auto kNodeFields = []() {
   };
 };
 
-/// Maps MeSH XML node names to known MeSH types
+/// Scts MeSH XML node names to known MeSH types
 static const auto kNodeTypes = []() {
   return std::unordered_map<std::string_view, MeshType>{
     {  "DescriptorRecord", MeshType::kDescriptorRecord},

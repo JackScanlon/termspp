@@ -6,8 +6,8 @@ licenses(['notice'])
 exports_files(['LICENSE'])
 
 cc_library(
-  name = 'map',
-  hdrs = ['map.hpp', 'defs.hpp', 'constants.hpp'],
+  name = 'sct',
+  hdrs = ['sct.hpp', 'defs.hpp', 'constants.hpp'],
   deps = [
     '//src/common:arena',
     '//src/common:result',
@@ -17,3 +17,15 @@ cc_library(
   ],
   include_prefix = 'termspp/mapper',
 )
+
+# cc_library(
+#   name = 'doid',
+#   hdrs = ['doid.hpp'],
+#   deps = [
+#     '//src/common:result',
+#     '//src/common:scope',
+
+#     '@com_github_martinmoene_expected//:expected',
+#   ],
+#   include_prefix = 'termspp/mapper',
+# )

@@ -20,23 +20,23 @@ namespace mapper {
  ************************************************************/
 
 /// Columns contained by a single row
-typedef std::vector<std::string_view> MapCols;
+typedef std::vector<std::string_view> SctCols;
 
 /// Describes a parsed map row
 ///   - Used for structured binding of ColumnDelimiter policy
-struct alignas(kMapRowAlignment) MapRow {
-  MapCols        cols;
+struct alignas(kSctRowAlignment) SctRow {
+  SctCols        cols;
   uint64_t       size;
   common::Status status;
 };
 
 /// Describes a finalised map record
-struct alignas(kMapRecordAlignment) MapRecord {
+struct alignas(kSctRecordAlignment) SctRecord {
   char *uidBuf;
   char *srcBuf;
   char *trgBuf;
 
-  friend auto operator<<(std::ostream &stream, const MapRecord &obj)->std::ostream & {
+  friend auto operator<<(std::ostream &stream, const SctRecord &obj)->std::ostream & {
     return stream << obj.uidBuf << "|"    //
                   << obj.srcBuf << "|"    //
                   << obj.trgBuf << "\n";  //
@@ -44,7 +44,7 @@ struct alignas(kMapRecordAlignment) MapRecord {
 };
 
 /// Uid reference map type
-typedef std::tuple<std::string_view, std::string_view, std::string_view> MapKey;
+typedef std::tuple<std::string_view, std::string_view, std::string_view> SctKey;
 
 /// Lookup by individual key components
 struct RecordLookup {
@@ -57,7 +57,7 @@ struct RecordLookup {
 struct RecordComp {
   using is_transparent = bool;
 
-  auto operator()(MapKey const &elem0, MapKey const &elem1) const->bool {
+  auto operator()(SctKey const &elem0, SctKey const &elem1) const->bool {
     auto comp0 = std::string(std::get<0>(elem0));
     auto comp1 = std::string(std::get<0>(elem1));
 
@@ -67,7 +67,7 @@ struct RecordComp {
     return comp0.compare(comp1) < 0;
   }
 
-  auto operator()(MapKey const &elem, const RecordLookup &lkup) const->bool {
+  auto operator()(SctKey const &elem, const RecordLookup &lkup) const->bool {
     auto comp0 = std::string{};
     auto comp1 = std::string{};
 
@@ -89,7 +89,7 @@ struct RecordComp {
     return comp0.compare(comp1) < 0;
   }
 
-  auto operator()(const RecordLookup &lkup, MapKey const &elem) const->bool {
+  auto operator()(const RecordLookup &lkup, SctKey const &elem) const->bool {
     auto comp0 = std::string{};
     auto comp1 = std::string{};
 
@@ -111,17 +111,17 @@ struct RecordComp {
     return comp1.compare(comp0) < 0;
   }
 
-  auto operator()(MapKey const &elem, const std::string_view &lkup) const->bool {
+  auto operator()(SctKey const &elem, const std::string_view &lkup) const->bool {
     return std::get<0>(elem).compare(lkup) < 0;
   }
 
-  auto operator()(const std::string_view &lkup, MapKey const &elem) const->bool {
+  auto operator()(const std::string_view &lkup, SctKey const &elem) const->bool {
     return lkup.compare(std::get<0>(elem)) < 0;
   }
 };
 
 /// Multimap of records, keyed to components
-typedef std::multimap<MapKey, MapRecord, RecordComp> RecordMap;
+typedef std::multimap<SctKey, SctRecord, RecordComp> RecordSct;
 
 /************************************************************
  *                                                          *
@@ -130,13 +130,13 @@ typedef std::multimap<MapKey, MapRecord, RecordComp> RecordMap;
  ************************************************************/
 
 /// Predicate type for `FilterPolicy` policies
-typedef bool (*MapPredicate)(MapRow &);
+typedef bool (*SctPredicate)(SctRow &);
 
 /// Record handler for `BuilderPolicy` policies
-typedef bool (*RowBuilder)(const MapCols &, uint8_t *, MapRecord &);
+typedef bool (*RowBuilder)(const SctCols &, uint8_t *, SctRecord &);
 
-/// Record handler for `MapPolicy` policies
-typedef bool (*MapTester)(const MapRow &, const RecordMap &);
+/// Record handler for `SctPolicy` policies
+typedef bool (*SctTester)(const SctRow &, const RecordSct &);
 
 /************************************************************
  *                                                          *
@@ -169,8 +169,8 @@ auto FilterColumnIndices(Container &container, uint64_t &size, Iter beg, Iter en
 /// DelimiterPolicy: Parse columns from a row by some delimiter described by `Token`
 template <char Token = '|'>
 struct ColumnDelimiter {
-  static auto ParseLine(std::string_view input) -> MapRow {
-    auto data = MapCols{};
+  static auto ParseLine(std::string_view input) -> SctRow {
+    auto data = SctCols{};
     data.reserve(input.length() / 2);
 
     uint64_t size{0};
@@ -217,15 +217,15 @@ struct ColumnDelimiter {
 
 /// FilterPolicy: Accept all rows and don't filter
 struct NoRowFilter {
-  static auto Filter(MapRow & /*row*/) -> bool {
+  static auto Filter(SctRow & /*row*/) -> bool {
     return false;
   }
 };
 
 /// FilterPolicy: Filter rows by some predicate
-template <MapPredicate Predicate>
+template <SctPredicate Predicate>
 struct RowFilter {
-  static auto Filter(MapRow &row) -> bool {
+  static auto Filter(SctRow &row) -> bool {
     return Predicate(row);
   }
 };
@@ -234,43 +234,43 @@ struct RowFilter {
 template <class L>
 auto LambdaFilter(L &&lambda) {
   static L func = std::forward<L>(lambda);
-  return [](MapRow &row) -> bool {
+  return [](SctRow &row) -> bool {
     return func(row);
   };
 }
 
 /// SelectorPolicy: Return
 struct AllSelected {
-  static auto Select(MapRow & /*row*/) -> void {}
+  static auto Select(SctRow & /*row*/) -> void {}
 };
 
 /// SelectorPolicy: Select columns by indices
 template <uint16_t... Args>
 struct ColumnSelect {
-  static auto Select(MapRow &row) -> void {
+  static auto Select(SctRow &row) -> void {
     static const std::vector<uint16_t> kSelected{Args...};
     row.cols.erase(FilterColumnIndices(row.cols, row.size, kSelected.begin(), kSelected.end()), row.cols.end());
   }
 };
 
-/// MapPolicy: map all rows regardless
-struct MapAll {
-  static auto ShouldMap(const MapRow & /*row*/, const RecordMap & /*map*/) -> bool {
+/// SctPolicy: map all rows regardless
+struct SctAll {
+  static auto ShouldSct(const SctRow & /*row*/, const RecordSct & /*map*/) -> bool {
     return true;
   }
 };
 
-/// MapPolicy: lambda to test uniqueness/some other prop after selection against existing records
-template <MapTester Test>
-struct MapSelector {
-  static auto ShouldMap(const MapRow &row, const RecordMap &map) -> bool {
+/// SctPolicy: lambda to test uniqueness/some other prop after selection against existing records
+template <SctTester Test>
+struct SctSelector {
+  static auto ShouldSct(const SctRow &row, const RecordSct &map) -> bool {
     return Test(row, map);
   }
 };
 
 /// BuilderPolicy: Default, throw err
 struct NoBuilder {
-  static auto Build(const MapCols & /*cols*/, uint8_t * /*ptr*/, MapRecord & /*record*/) -> bool {
+  static auto Build(const SctCols & /*cols*/, uint8_t * /*ptr*/, SctRecord & /*record*/) -> bool {
     return false;
   }
 };
@@ -278,7 +278,7 @@ struct NoBuilder {
 /// BuilderPolicy: Build Conso record
 template <RowBuilder Builder>
 struct RecordBuilder {
-  static auto Build(const MapCols &cols, uint8_t *ptr, MapRecord &record) -> bool {
+  static auto Build(const SctCols &cols, uint8_t *ptr, SctRecord &record) -> bool {
     return Builder(cols, ptr, record);
   }
 };

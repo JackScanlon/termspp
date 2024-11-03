@@ -10,7 +10,7 @@ namespace builder {
 class Document final {
 private:
   struct Options {
-    std::string mapTarget;   /// Map file target
+    std::string sctTarget;   /// Sct file target
     std::string meshTarget;  /// Mesh file target
   };
 
@@ -34,8 +34,8 @@ public:
   /// Getter: retrieve the `Result` of this document describing success or any assoc. errs
   [[nodiscard]] auto GetResult() const -> common::Result;
 
-  /// Getter: get the Map document target
-  [[nodiscard]] auto GetMapTarget() const -> std::string_view;
+  /// Getter: get the Sct document target
+  [[nodiscard]] auto GetSctTarget() const -> std::string_view;
 
   /// Getter: get the MeSH document target
   [[nodiscard]] auto GetMeshTarget() const -> std::string_view;
@@ -45,7 +45,7 @@ private:
   auto generate() -> common::Result;
 
 private:
-  std::string    mapTarget_;   /// Map file target
+  std::string    sctTarget_;   /// Sct file target
   std::string    meshTarget_;  /// MeSH file target
   common::Result result_;      /// Document generation result
 };

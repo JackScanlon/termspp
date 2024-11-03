@@ -13,7 +13,7 @@ namespace builder = ::termspp::builder;
 const char *const builder::kMeshType = "MSH";
 const auto builder::kCodingPattern   = std::regex{"^(SNOMED(?!.*?VET$))|^(MSH)"};
 
-auto builder::consoFilter(mapper::MapRow &row, std::shared_ptr<mesh::MeshDocument> mesh_doc) -> bool {
+auto builder::consoFilter(mapper::SctRow &row, std::shared_ptr<mesh::MeshDocument> mesh_doc) -> bool {
   // Ignore empty
   auto cols = row.cols;
   if (cols.size() < mapper::kConsoColumnWidth) {
@@ -50,7 +50,7 @@ auto builder::consoFilter(mapper::MapRow &row, std::shared_ptr<mesh::MeshDocumen
   return false;
 };
 
-auto builder::consoCheck(const mapper::MapRow &row, const mapper::RecordMap &records) -> bool {
+auto builder::consoCheck(const mapper::SctRow &row, const mapper::RecordSct &records) -> bool {
   auto cols = row.cols;
   if (cols.size() < 3 || row.size < 1) {
     return false;
@@ -63,7 +63,7 @@ auto builder::consoCheck(const mapper::MapRow &row, const mapper::RecordMap &rec
   return true;
 }
 
-auto builder::consoRecord(const mapper::MapCols &cols, uint8_t *ptr, mapper::MapRecord &record) -> bool {
+auto builder::consoRecord(const mapper::SctCols &cols, uint8_t *ptr, mapper::SctRecord &record) -> bool {
   size_t length{0};
   size_t offset{0};
   for (auto [iter, end, index] = std::tuple{cols.begin(), cols.end(), 0}; iter != end; ++iter, ++index) {

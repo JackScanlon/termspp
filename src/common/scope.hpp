@@ -12,11 +12,12 @@ namespace common {
 template <typename T, typename Fn>
 class ScopedDeleterImpl final {
 public:
-  explicit ScopedDeleterImpl(T *resource_, Fn fn_) : resource(resource_), fn(fn_) {};
+  ScopedDeleterImpl() : resource_(nullptr), fn_(nullptr) {};
+  explicit ScopedDeleterImpl(T *resource, Fn func) : resource_(resource), fn_(func) {};
 
   ~ScopedDeleterImpl() {
-    if (resource) {
-      fn(resource);
+    if (resource_ != nullptr) {
+      fn_(resource_);
     }
   }
 
@@ -26,17 +27,23 @@ public:
   auto operator=(const ScopedDeleterImpl &other)->ScopedDeleterImpl& = delete;
   // clang-format on
 
-  auto release() -> T * {
+  /// Getter: retrieve the resource contained by this instance
+  auto GetResource() -> T * {
+    return resource_;
+  }
+
+  /// Prematurely release the contained resource
+  auto Release() -> T * {
     // clang-format off
-    T *res = resource;
+    T *res = resource_;
     // clang-format on
-    resource = nullptr;
+    resource_ = nullptr;
     return res;
   }
 
-public:
-  Fn fn{};
-  T *resource{nullptr};
+private:
+  T *resource_{nullptr};
+  Fn fn_{nullptr};
 };
 
 /// Management of a resource within a scope with a callback

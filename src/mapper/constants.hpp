@@ -15,8 +15,8 @@ constexpr const size_t kConsoTargetColIndex   = 13U;  /// Concept target code/te
 constexpr const size_t kConsoSuppressColIndex = 16U;  /// Concept suppression status
 
 /// Mem. alignment
-constexpr const size_t kMapRowAlignment    = 32U;
-constexpr const size_t kMapRecordAlignment = 16U;
+constexpr const size_t kSctRowAlignment    = 32U;
+constexpr const size_t kSctRecordAlignment = 16U;
 
 /// Source abbreviation name(s)
 constexpr const char *const kMeshSab   = "MSH";

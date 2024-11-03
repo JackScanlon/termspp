@@ -10,7 +10,7 @@ namespace common {
 constexpr const char *kResultFormatStr = "%s with msg: %s";
 
 /// Enum describing the parsing / op status
-///   - returned as a member of the `MapResult` object
+///   - returned as a member of the `SctResult` object
 enum class Status : uint8_t {
   kUnknownErr,           // Default err state describing an unknown / unexpected err
   kInvalidArguments,     // Raised when arguments are invalid/illegal, e.g. empty path string

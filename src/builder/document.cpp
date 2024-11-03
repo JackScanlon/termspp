@@ -1,7 +1,7 @@
 #include "termspp/builder/document.hpp"
 
 #include "termspp/builder/policies.hpp"
-#include "termspp/mapper/map.hpp"
+#include "termspp/mapper/sct.hpp"
 #include "termspp/mesh/parser.hpp"
 
 #include <filesystem>
@@ -69,12 +69,12 @@ auto writeDocument(const char *filepath, const Container &rows) -> common::Resul
  ************************************************************/
 
 builder::Document::Document(Options opts)
-    : mapTarget_(std::move(opts.mapTarget)), meshTarget_(std::move(opts.meshTarget)) {
+    : sctTarget_(std::move(opts.sctTarget)), meshTarget_(std::move(opts.meshTarget)) {
   result_ = generate();
 };
 
 auto builder::Document::Build(Options opts) -> bool {
-  mapTarget_  = std::move(opts.mapTarget);
+  sctTarget_  = std::move(opts.sctTarget);
   meshTarget_ = std::move(opts.meshTarget);
 
   result_ = generate();
@@ -89,8 +89,8 @@ auto builder::Document::GetResult() const -> common::Result {
   return result_;
 }
 
-auto builder::Document::GetMapTarget() const -> std::string_view {
-  return mapTarget_;
+auto builder::Document::GetSctTarget() const -> std::string_view {
+  return sctTarget_;
 }
 
 auto builder::Document::GetMeshTarget() const -> std::string_view {
@@ -98,8 +98,8 @@ auto builder::Document::GetMeshTarget() const -> std::string_view {
 }
 
 auto builder::Document::generate() -> common::Result {
-  if (mapTarget_.empty()) {
-    return common::Result{common::Status::kInvalidArguments, "expected non-empty map target file target"};
+  if (sctTarget_.empty()) {
+    return common::Result{common::Status::kInvalidArguments, "expected non-empty sct target file target"};
   }
 
   // MeSH
@@ -117,21 +117,21 @@ auto builder::Document::generate() -> common::Result {
   }
 
   // MRCONSO
-  auto filter = mapper::LambdaFilter([mesh_doc](mapper::MapRow &row) -> bool {
+  auto filter = mapper::LambdaFilter([mesh_doc](mapper::SctRow &row) -> bool {
     return builder::consoFilter(row, mesh_doc);
   });
 
-  auto map_doc = mapper::MapDocument<mapper::ColumnDelimiter<'|'>,                // Columns delimited by pipe
+  auto map_doc = mapper::SctDocument<mapper::ColumnDelimiter<'|'>,                // Columns delimited by pipe
                                      mapper::RowFilter<filter>,                   // Filter rows by lang
                                      ConsoSelector,                               // Select CUID, SAB & CODE
-                                     mapper::MapSelector<builder::consoCheck>,    // Ensure unique record
+                                     mapper::SctSelector<builder::consoCheck>,    // Ensure unique record
                                      mapper::RecordBuilder<builder::consoRecord>  // Build Conso record
-                                     >::Load(mapTarget_.c_str());
+                                     >::Load(sctTarget_.c_str());
   if (!map_doc->Ok()) {
     return map_doc->GetResult();
   }
 
-  auto result = writeDocument(mapTarget_.c_str(), map_doc->GetRecords());
+  auto result = writeDocument(sctTarget_.c_str(), map_doc->GetRecords());
   if (!result) {
     return result;
   }

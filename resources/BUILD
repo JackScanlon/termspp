@@ -22,6 +22,6 @@ genrule(
 genrule(
   name = 'rrf_debug',
   srcs = ['basic.RRF'],
-  outs = ['resources.xml'],
+  outs = ['resources.RRF'],
   cmd = 'cp -r $(SRCS) $(OUTS)'
 )

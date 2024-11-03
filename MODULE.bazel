@@ -25,6 +25,7 @@ bazel_dep(name = 'mimalloc', version = '2.1.7-bcr.alpha.1')
 http_archive(
   name = 'com_github_martinmoene_expected',
   build_file = '//third_party:expected.BUILD',
+  sha256 = '27649f30bd9d4fe7b193ab3eb6f78c64d0f585c24c085f340b4722b3d0b5e701',
   strip_prefix = 'expected-lite-0.8.0',
   urls = ['https://github.com/martinmoene/expected-lite/archive/refs/tags/v0.8.0.tar.gz'],
 )
@@ -32,8 +33,17 @@ http_archive(
 http_archive(
   name = 'com_github_ben-strasser_fast-cpp-csv-parser',
   build_file = '//third_party:csv.BUILD',
+  sha256 = 'fba4f74f8bf6c403a1031e7025cc18be005f5d4624ba78541e409a86fd5af160',
   strip_prefix = 'fast-cpp-csv-parser-758f5665705a38da55322511d5b22fe2679918fe',
   url = 'https://github.com/ben-strasser/fast-cpp-csv-parser/archive/758f5665705a38da55322511d5b22fe2679918fe.tar.gz',
+)
+
+http_archive(
+  name = 'com_github_jpbarrette_curlpp',
+  build_file = 'third_party/curlpp.BUILD',
+  sha256 = '97e3819bdcffc3e4047b6ac57ca14e04af85380bd93afe314bee9dd5c7f46a0a',
+  strip_prefix = 'curlpp-0.8.1',
+  url = 'https://github.com/jpbarrette/curlpp/archive/v0.8.1.tar.gz',
 )
 
 ## IDE

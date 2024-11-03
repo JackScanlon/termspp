@@ -10,7 +10,7 @@ cc_library(
   srcs = ['document.cpp', 'policies.cpp'],
   hdrs = ['document.hpp', 'policies.hpp'],
   deps = [
-    '//src/mapper:map',
+    '//src/mapper:sct',
     '//src/mesh:parser',
     '//src/common:result',
   ],

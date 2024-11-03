@@ -15,13 +15,13 @@ extern const char *const kMeshType;
 extern const std::regex kCodingPattern;
 
 /// RowFilter: filters the `MRCONSO.RRF` definition file row(s)
-auto consoFilter(termspp::mapper::MapRow &row, std::shared_ptr<termspp::mesh::MeshDocument> mesh_doc) -> bool;
+auto consoFilter(termspp::mapper::SctRow &row, std::shared_ptr<termspp::mesh::MeshDocument> mesh_doc) -> bool;
 
-/// MapPolicy: ensure row is unique across its key-value pair
-auto consoCheck(const termspp::mapper::MapRow &row, const termspp::mapper::RecordMap &records) -> bool;
+/// SctPolicy: ensure row is unique across its key-value pair
+auto consoCheck(const termspp::mapper::SctRow &row, const termspp::mapper::RecordSct &records) -> bool;
 
 /// BuilderPolicy: builds a record map from a row of columns as parsed/selected by our policies
-auto consoRecord(const termspp::mapper::MapCols &cols, uint8_t *ptr, termspp::mapper::MapRecord &record) -> bool;
+auto consoRecord(const termspp::mapper::SctCols &cols, uint8_t *ptr, termspp::mapper::SctRecord &record) -> bool;
 
 }  // namespace builder
 }  // namespace termspp

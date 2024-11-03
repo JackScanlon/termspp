@@ -16,12 +16,12 @@ namespace mapper {
 
 /************************************************************
  *                                                          *
- *                       MapDocument                        *
+ *                       SctDocument                        *
  *                                                          *
  ************************************************************/
 
 /// SCT<->MeSH Document
-///   - Maps SCT & MeSH codes described in the following ref:
+///   - Scts SCT & MeSH codes described in the following ref:
 ///     https://www.ncbi.nlm.nih.gov/books/NBK9685/table/ch03.T.concept_names_and_sources_file_mr/
 ///
 /// [!] Issues:
@@ -34,36 +34,36 @@ namespace mapper {
 template <class DelimiterPolicy = ColumnDelimiter<>,
           class FilterPolicy    = NoRowFilter,
           class SelectorPolicy  = AllSelected,
-          class MapPolicy       = MapAll,
+          class SctPolicy       = SctAll,
           class BuilderPolicy   = NoBuilder>
-class MapDocument final                                                  //
-    : public std::enable_shared_from_this<MapDocument<DelimiterPolicy,   //
+class SctDocument final                                                  //
+    : public std::enable_shared_from_this<SctDocument<DelimiterPolicy,   //
                                                       FilterPolicy,      //
                                                       SelectorPolicy,    //
-                                                      MapPolicy,         //
+                                                      SctPolicy,         //
                                                       BuilderPolicy>> {  //
 
   /// Arena allocator region size
   static constexpr const size_t kArenaRegionSize{4096LL};
 
   /// Policy typedef
-  using MapDoc = MapDocument<DelimiterPolicy, FilterPolicy, SelectorPolicy, MapPolicy, BuilderPolicy>;
+  using SctDoc = SctDocument<DelimiterPolicy, FilterPolicy, SelectorPolicy, SctPolicy, BuilderPolicy>;
 
 public:
-  /// Creates a new Map document instance
-  static auto Load(const char *filepath) -> std::shared_ptr<MapDoc> {
-    return std::shared_ptr<MapDoc>(new MapDoc(filepath));
+  /// Creates a new Sct document instance
+  static auto Load(const char *filepath) -> std::shared_ptr<SctDoc> {
+    return std::shared_ptr<SctDoc>(new SctDoc(filepath));
   }
 
 public:
-  ~MapDocument() = default;
+  ~SctDocument() = default;
 
-  MapDocument(MapDocument const &)                   = delete;
-  auto operator=(MapDocument const &)->MapDocument & = delete;
+  SctDocument(SctDocument const &)                   = delete;
+  auto operator=(SctDocument const &)->SctDocument & = delete;
 
   /// Retrieve a shared_ptr that references & shares the ownership of this cls
-  [[nodiscard]] auto GetRef() -> std::shared_ptr<MapDoc> {
-    return std::enable_shared_from_this<MapDoc>::shared_from_this();
+  [[nodiscard]] auto GetRef() -> std::shared_ptr<SctDoc> {
+    return std::enable_shared_from_this<SctDoc>::shared_from_this();
   }
 
   /// Getter: test whether this document loaded successfully
@@ -82,13 +82,13 @@ public:
   }
 
   /// Getter: Get records contained by this instance
-  [[nodiscard]] auto GetRecords() -> RecordMap & {
+  [[nodiscard]] auto GetRecords() -> RecordSct & {
     return records_;
   }
 
 private:
   /// Builds a unique map across MeSH & SCT xrefs from file
-  auto buildMapping(const char *filepath) -> void {
+  auto buildSctping(const char *filepath) -> void {
     auto result = parseFile(filepath);
     if (!result.Ok()) {
       result_ = result;
@@ -157,7 +157,7 @@ private:
         SelectorPolicy::Select(row);
 
         // Ensure mappable e.g. uniqueness of column(s) by predicate
-        if (row.status != common::Status::kSuccessful || !MapPolicy::ShouldMap(row, records_)) {
+        if (row.status != common::Status::kSuccessful || !SctPolicy::ShouldSct(row, records_)) {
           continue;
         }
 
@@ -169,7 +169,7 @@ private:
         }
 
         auto record = result.value();
-        records_.emplace(MapKey{record.uidBuf, record.srcBuf, record.trgBuf}, record);
+        records_.emplace(SctKey{record.uidBuf, record.srcBuf, record.trgBuf}, record);
       }
     } catch (const std::exception &err) {
       return common::Result{common::Status::kLineReaderErr, err.what()};
@@ -179,7 +179,7 @@ private:
   }
 
   /// Allocates a record to this instance's arena and packs it into a struct
-  [[nodiscard]] auto allocRow(const MapCols &row, const uint64_t &size) -> nonstd::expected<MapRecord, common::Result> {
+  [[nodiscard]] auto allocRow(const SctCols &row, const uint64_t &size) -> nonstd::expected<SctRecord, common::Result> {
     // Alloc record size
     uint8_t *ptr{nullptr};
     if (!allocator_->Allocate(static_cast<int64_t>(size), &ptr)) {
@@ -200,7 +200,7 @@ private:
     }
 
     // Build record by some func
-    auto result = MapRecord{nullptr, nullptr, nullptr};
+    auto result = SctRecord{nullptr, nullptr, nullptr};
     if (!BuilderPolicy::Build(row, ptr, result)) {
       return nonstd::make_unexpected(common::Result{common::Status::kPolicyErr, "failed to build record"});
     }
@@ -210,13 +210,13 @@ private:
 
 private:
   common::Result                 result_;     /// Parsing result & document validity
-  RecordMap                      records_;    /// Map records
+  RecordSct                      records_;    /// Sct records
   std::unique_ptr<common::Arena> allocator_;  /// Arena allocator
 
 protected:
-  /// Map document constructor
-  explicit MapDocument(const char *filepath) {
-    buildMapping(filepath);
+  /// Sct document constructor
+  explicit SctDocument(const char *filepath) {
+    buildSctping(filepath);
   }
 };
 
